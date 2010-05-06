@@ -1,0 +1,158 @@
+%%%-------------------------------------------------------------------
+%%% File    : metafeed.erl
+%%% Author  : klemo <klemo@klemo-desktop>
+%%% Description : Core metafeed server
+%%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
+%%%-------------------------------------------------------------------
+-module(metafeed).
+-behaviour(gen_server).
+-export([start/0, stop/0, new_query/2, run_query/1, update_query/2, remove_query/1, list_queries/0, test_server/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         terminate/2, code_change/3]).
+
+%%%-------------------------------------------------------------------
+%% Metafeed API
+%%%-------------------------------------------------------------------
+
+start() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+stop() ->
+    gen_server:call(?MODULE, stop).
+
+new_query(Name, Query) ->
+    gen_server:call(?MODULE, {new_query, Name, Query}).
+
+run_query(Name) ->
+    gen_server:call(?MODULE, {run_query, Name}).
+
+update_query(Name, Query) ->
+    gen_server:call(?MODULE, {update_query, Name, Query}).
+
+remove_query(Name) ->
+    gen_server:call(?MODULE, {remove_query, Name}).
+
+list_queries() ->
+    gen_server:call(?MODULE, {list_queries}).
+
+test_server() ->
+    start(),
+    new_query("a", {sort, ascending, "title", {filter, contains, "Google", ["title"], {fetch,"test.rss"}}}),
+    run_query("a"),
+    new_query("b", {tail, 4, {union, {fetch, "test.rss"}, {fetch, "test2.rss"}}}),
+    run_query("b"),
+    new_query("c", {unique, {union, {fetch, "test.rss"}, {fetch, "test2.rss"}}}),
+    run_query("c"),
+    {ok, "test_server"}.
+
+%%%-------------------------------------------------------------------
+%% Metafeed generic server implementation
+%%%-------------------------------------------------------------------
+
+%%%-------------------------------------------------------------------
+%% Initialize metafeed's state
+%%%-------------------------------------------------------------------
+init([]) ->
+    {ok, ets:new(?MODULE, [])}.
+
+%%%-------------------------------------------------------------------
+%% Terminate all metafeed interpreter processes
+%%%-------------------------------------------------------------------
+clean_up(State) ->
+    clean_up(ets:first(State), State),
+    ets:delete(State).
+
+clean_up('$end_of_table', _) ->
+    ok;
+clean_up(Proc, State) ->
+    list_to_atom(Proc) ! {stop},
+    clean_up(ets:next(State, Proc), State).
+
+%%%-------------------------------------------------------------------
+%% Return list of all registered queries
+%%%-------------------------------------------------------------------
+list_queries(State) ->
+   ets:tab2list(State).
+
+%%%-------------------------------------------------------------------
+%% Metafeed gen_server handle calls
+%%%-------------------------------------------------------------------
+
+%%%-------------------------------------------------------------------
+%% Registers new query in system; query is added to query table and
+%% new process is spawned for query
+%%%-------------------------------------------------------------------
+handle_call({new_query, Name, Query}, _From, State) ->
+    Reply = case ets:lookup(State, Name)  of
+               [] -> ets:insert(State, {Name, Query}),
+                     % spawn new interpreter for new query
+                     register(
+                       list_to_atom(Name),
+                       spawn_link(fun() -> interpreter:main(Name, Query) end)),
+                     {ok, Name};
+               [_] -> {Name, already_exist}
+           end,
+    {reply, Reply, State};
+
+%%%-------------------------------------------------------------------
+%% Starts execution of query by sending message to matching process.
+%%%-------------------------------------------------------------------
+handle_call({run_query, Name}, _From, State) ->
+    Reply = case ets:lookup(State, Name) of
+               [] -> {error, "no such query"};
+               [_] -> list_to_atom(Name) ! {execute},
+                      {ok}
+           end,
+    {reply, Reply, State};
+
+%%%-------------------------------------------------------------------
+%% Updates query text.
+%%%-------------------------------------------------------------------
+handle_call({update_query, Name, Query}, _From, State) ->
+    Reply = case ets:lookup(State, Name) of
+               [] -> {error, "no such query"};
+               [_] -> list_to_atom(Name) ! {update, Query},
+                      {ok}
+           end,
+    {reply, Reply, State};
+
+%%%-------------------------------------------------------------------
+%% Removes query from metafeed system.
+%%%-------------------------------------------------------------------
+handle_call({remove_query, Name}, _From, State) ->
+    Reply = case ets:lookup(State, Name) of
+               [] -> {error, "no such query"};
+               [_] -> list_to_atom(Name) ! {stop},
+                      ets:delete(State, Name),
+                      {ok}
+           end,
+    {reply, Reply, State};
+
+%%%-------------------------------------------------------------------
+%% Lists all registered queries.
+%%%-------------------------------------------------------------------
+handle_call({list_queries}, _From, State) ->
+    Reply = list_queries(State),
+    {reply, Reply, State};
+
+%%%-------------------------------------------------------------------
+%% Terminates metafeed.
+%%%-------------------------------------------------------------------
+handle_call(stop, _From, State) ->
+    clean_up(State),
+    {stop, normal, stopped, State}.
+
+%%%-------------------------------------------------------------------
+%% Metafeed gen_server misc.
+%%%-------------------------------------------------------------------
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
