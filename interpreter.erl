@@ -22,8 +22,8 @@ main(Name, Query, State) ->
                 [H|T] ->
                     io:format("Query ~p: ~n~p.~n", [Name, feed_parser:get_titles([H|T])])
             catch
-                _:E ->
-                    io:format("Error ~p~n", [E])
+                _:_ ->
+                    io:format("Error ~p: ~n~p.~n", [Name, erlang:get_stacktrace()])
             end,
             main(Name, Query, State);
         %% update query text
@@ -60,6 +60,10 @@ do({filter, does_not_contain, String, Elements, L}) ->
 
 do({filter, equal, String, Element, L}) ->
     feed_parser:filter({equal, String, Element},
+                        do(L));
+
+do({replace, Str1, Str2, Elements, L}) ->
+    feed_parser:replace({Str1, Str2, Elements},
                         do(L));
 
 do({sort, ascending, Element, L}) ->

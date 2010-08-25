@@ -43,6 +43,8 @@ test_server() ->
     run_query("b"),
     new_query("c", {unique, {union, {fetch, "test.rss"}, {fetch, "test2.rss"}}}),
     run_query("c"),
+    new_query("d", {replace, "Google", "Domination", ["title"], {fetch, "test.rss"}}),
+    run_query("d"),
     {ok, "test_server"}.
 
 %%%-------------------------------------------------------------------
