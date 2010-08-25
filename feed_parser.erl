@@ -6,13 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(feed_parser).
 -include_lib("xmerl/include/xmerl.hrl").
--export([init/0, fetch/1, filter/2, replace/2, sort/2, union/2, tail/2, unique/1, get_titles/1]).
-
-%%%-------------------------------------------------------------------
-%% Initialize feed_parser
-%%%-------------------------------------------------------------------
-init() ->
-    ibrowse:start().
+-export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, get_titles/1]).
 
 %%%-------------------------------------------------------------------
 %% Feed parser API.
