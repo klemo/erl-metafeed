@@ -6,6 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(interpreter).
 -import(feed_parser).
+-import(utils).
 -export([main/2]).
 
 %%%-------------------------------------------------------------------
@@ -20,7 +21,7 @@ main(Name, Query, State) ->
         {execute} ->
             try do(Query) of
                 [H|T] ->
-                    io:format("Query ~p: ~n~p.~n", [Name, feed_parser:get_titles([H|T])])
+                    io:format("Query ~p: ~n~p.~n", [Name, utils:get_titles([H|T])])
             catch
                 _:_ ->
                     io:format("Error ~p: ~n~p.~n", [Name, erlang:get_stacktrace()])

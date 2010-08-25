@@ -9,10 +9,29 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -import(feed_parser,
-        [filter/2]).
+        [fetch/1, filter/2]).
+-import(utils,
+        [get_titles/1]).
 
 filter_test_() ->
-    ?_assertMatch([],
-                  filter({contains, 'test', ['title']},
-                         [])
-                 ).
+    [
+     ?_assertMatch([],
+                   filter({contains, "test", ["title"]},
+                          []
+                         )
+                  ),
+     ?_assertMatch([],
+                   get_titles(
+                     filter({contains, "does not exist", ["title"]},
+                            fetch("test_fix/test.rss")
+                           )
+                    )
+                  ),
+     ?_assertMatch(["2"],
+                   get_titles(
+                     filter({contains, "2", ["title"]},
+                            fetch("test_fix/test.rss")
+                           )
+                    )
+                  )
+    ].

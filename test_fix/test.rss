@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:georss="http://www.georss.org/georss" xmlns:twitter="http://api.twitter.com">
+  <channel>
+    <title>Twitter Test</title>
+    <link>http://twitter.com/test</link>
+    <atom:link type="application/rss+xml" href="http://twitter.com/statuses/user_timeline/test.rss" rel="self"/>
+    <description>Twitter updates from test.</description>
+    <language>en-us</language>
+    <ttl>40</ttl>
+  <item>
+    <title>1</title>
+    <description>one</description>
+    <pubDate>Tue, 24 Aug 2010 13:53:20 +0000</pubDate>
+    <guid>http://twitter.com/test/1</guid>
+    <link>http://twitter.com/test/1</link>
+  </item>
+  <item>
+    <title>2</title>
+    <description>two</description>
+    <pubDate>Tue, 23 Aug 2010 13:53:20 +0000</pubDate>
+    <guid>http://twitter.com/test/2</guid>
+    <link>http://twitter.com/test/2</link>
+  </item>
+  <item>
+    <title>3</title>
+    <description>three</description>
+    <pubDate>Tue, 22 Aug 2010 13:53:20 +0000</pubDate>
+    <guid>http://twitter.com/test/3</guid>
+    <link>http://twitter.com/test/3</link>
+  </item>
+  <item>
+    <title>4</title>
+    <description>four</description>
+    <pubDate>Tue, 21 Aug 2010 13:53:20 +0000</pubDate>
+    <guid>http://twitter.com/test/4</guid>
+    <link>http://twitter.com/test/4</link>
+  </item>
+  </channel>
+</rss>

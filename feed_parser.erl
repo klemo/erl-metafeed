@@ -6,7 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(feed_parser).
 -include_lib("xmerl/include/xmerl.hrl").
--export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, get_titles/1]).
+-export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, replace/2]).
 
 %%%-------------------------------------------------------------------
 %% Feed parser API.
@@ -60,7 +60,7 @@ filter({equal, Text, Element}, Items) ->
 %%%-------------------------------------------------------------------
 replace({Str1, Str2, Elements}, Items) ->
     lists:map(fun(X) ->
-                      replaceStr(X, Str1, Str2, Elements) end,
+                      X end,
               Items).
 
 %%%-------------------------------------------------------------------
@@ -196,38 +196,3 @@ contains_text(Text, [Node|Rest]) ->
         nomatch -> contains_text(Text, Rest);
         {match, _} -> true
     end.
-
-%%%-------------------------------------------------------------------
-%% Replace strings in list
-%%%-------------------------------------------------------------------
-replace_str_list(Str1, Str2, List) ->
-    replace_str_list(Str1, Str2, List, []).
-
-replace_str_list(_, _, [], A) ->
-    A;
-replace_str_list(Str1, Str2, [Node|Rest], A) ->
-    Replaced = re:replace(Node#xmlText.value, Str1, Str2, [{return,list}]),
-    H = Node#xmlText{value=Replaced},
-    replace_str_list(Str1, Str2, Rest, [H|A]).
-
-%%%-------------------------------------------------------------------
-%% Replace Str1 with Str2 in Elements in Item
-%%%-------------------------------------------------------------------
-
-replaceStr(Item, Str1, Str2, Element, No) ->
-    XPathExpr = "//" ++ Element ++ "[" ++ No  ++ "]/text()",
-    Node = xmerl_xpath:string(XPathExpr, Item),
-    Replaced = re:replace(Node#xmlText.value, Str1, Str2, [{return,list}]),
-    H = Node#xmlText{value=Replaced}.
-
-%%%-------------------------------------------------------------------
-%% Extracts titles from feed Items and returns them as list.
-%%%-------------------------------------------------------------------
-get_titles(Items) ->
-    lists:reverse(get_titles(Items, [])).
-get_titles([], Titles) ->
-    Titles;
-get_titles([Item|Rest], Titles) ->
-    [Node|_] = xmerl_xpath:string("//title/text()", Item),
-    #xmlText{value=Title} = Node,
-    get_titles(Rest, [Title|Titles]).
