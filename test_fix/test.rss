@@ -7,33 +7,33 @@
     <description>Twitter updates from test.</description>
     <language>en-us</language>
     <ttl>40</ttl>
-  <item>
-    <title>1</title>
-    <description>one</description>
-    <pubDate>Tue, 24 Aug 2010 13:53:20 +0000</pubDate>
-    <guid>http://twitter.com/test/1</guid>
-    <link>http://twitter.com/test/1</link>
-  </item>
-  <item>
-    <title>2</title>
-    <description>two</description>
-    <pubDate>Tue, 23 Aug 2010 13:53:20 +0000</pubDate>
-    <guid>http://twitter.com/test/2</guid>
-    <link>http://twitter.com/test/2</link>
-  </item>
-  <item>
-    <title>3</title>
-    <description>three</description>
-    <pubDate>Tue, 22 Aug 2010 13:53:20 +0000</pubDate>
-    <guid>http://twitter.com/test/3</guid>
-    <link>http://twitter.com/test/3</link>
-  </item>
-  <item>
-    <title>4</title>
-    <description>four</description>
-    <pubDate>Tue, 21 Aug 2010 13:53:20 +0000</pubDate>
-    <guid>http://twitter.com/test/4</guid>
-    <link>http://twitter.com/test/4</link>
-  </item>
+    <item>
+      <title>1</title>
+      <description>one</description>
+      <pubDate>Tue, 24 Aug 2010 13:53:20 +0000</pubDate>
+      <guid>http://twitter.com/test/1</guid>
+      <link>http://twitter.com/test/1</link>
+    </item>
+    <item>
+      <title>2</title>
+      <description>two</description>
+      <pubDate>Tue, 23 Aug 2010 13:53:20 +0000</pubDate>
+      <guid>http://twitter.com/test/2</guid>
+      <link>http://twitter.com/test/2</link>
+    </item>
+    <item>
+      <title>45</title>
+      <description>fourty-five</description>
+      <pubDate>Tue, 22 Aug 2010 13:53:20 +0000</pubDate>
+      <guid>http://twitter.com/test/45</guid>
+      <link>http://twitter.com/test/45</link>
+    </item>
+    <item>
+      <title>3</title>
+      <description>three</description>
+      <pubDate>Tue, 21 Aug 2010 13:53:20 +0000</pubDate>
+      <guid>http://twitter.com/test/3</guid>
+      <link>http://twitter.com/test/3</link>
+    </item>
   </channel>
 </rss>
