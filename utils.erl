@@ -8,7 +8,20 @@
 -module(utils).
 
 -include_lib("xmerl/include/xmerl.hrl").
--export([get_titles/1]).
+-export([log/2, get_titles/1]).
+
+-ifdef(debug).
+-define(LOG(Msg, Args), io:format(Msg, Args)).
+-else.
+-define(LOG(Msg, Args), ok).
+-endif.
+
+%%%-------------------------------------------------------------------
+%% Logs message
+%%%-------------------------------------------------------------------
+
+log(Msg, Args) ->
+    ?LOG(Msg, Args).
 
 %%%-------------------------------------------------------------------
 %% Extracts titles from feed Items and returns them as list.

@@ -37,14 +37,15 @@ list_queries() ->
 
 test_server() ->
     start(),
-    new_query("a", {sort, ascending, "title", {filter, contains, "Google", ["title"], {fetch,"test.rss"}}}),
+    new_query("a", {sort, ascending, "title", {filter, contains, "2", ["title"], {fetch,"test_fix/test.rss"}}}),
     run_query("a"),
-    new_query("b", {tail, 4, {union, {fetch, "test.rss"}, {fetch, "test2.rss"}}}),
+    new_query("b", {tail, 2, {union, {fetch, "test_fix/test.rss"}, {fetch, "test_fix/test2.rss"}}}),
     run_query("b"),
-    new_query("c", {unique, {union, {fetch, "test.rss"}, {fetch, "test2.rss"}}}),
+    new_query("c", {unique, {union, {fetch, "test_fix/test.rss"}, {fetch, "test_fix/test2.rss"}}}),
     run_query("c"),
-    new_query("d", {replace, "Google", "Domination", ["title"], {fetch, "test.rss"}}),
+    new_query("d", {replace, "1", "101", "title", {fetch, "test_fix/test.rss"}}),
     run_query("d"),
+    stop(),
     {ok, "test_server"}.
 
 %%%-------------------------------------------------------------------

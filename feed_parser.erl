@@ -6,6 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(feed_parser).
 -include_lib("xmerl/include/xmerl.hrl").
+-import(utils).
 -export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, replace/2]).
 
 %%%-------------------------------------------------------------------
@@ -211,39 +212,32 @@ r_s(_, [], _) ->
 
 %% handle xmlElement
 r_s(Args, [H|T], false) when is_record(H, xmlElement) ->
-    %% io:format("Current node ~p~n", [H#xmlElement.name]),
+    utils:log("Current node ~p~n", [H#xmlElement.name]),
     {_, _, Element} = Args,
     Elem_name = atom_to_list(H#xmlElement.name),
-    if
-        %% element name match
-        Elem_name == Element ->
-            %% io:format("Match on ~p~n", [H#xmlElement.name]),
-            New_element = H#xmlElement{
-              content = r_s(Args, H#xmlElement.content, true)
-                           },
-            [New_element|r_s(Args, T)];
-        %% continue recursive traversal
-        true ->
-            %% io:format("No match on ~p~n", [H#xmlElement.name]),
-            New_element = H#xmlElement{
-              content = r_s(Args, H#xmlElement.content, false)
-                           },
-            [New_element|r_s(Args, T)]
-    end;
+    %% element name match
+    if Elem_name == Element ->
+            Match = true;
+       %% continue recursive traversal
+       true ->
+            Match = false
+    end,
+    New_element = H#xmlElement{
+                    content = r_s(Args, H#xmlElement.content, Match)
+                   },
+    [New_element|r_s(Args, T)];
 
-%% replace strings on this part of tree
+%% just continue traversal on this matched xmlElement
 r_s(Args, [H|T], true) when is_record(H, xmlElement) ->
-    %% io:format("Continue with true ~p~n", [H#xmlElement.name]),
     [r_s(Args, H#xmlElement.content, true)|r_s(Args, T)];
 
+%% when match is found on xmlText actually replace strings
 r_s(Args, [H|T], true) when is_record(H, xmlText) ->
-    %% io:format("Replace on ~p~n", [H#xmlText.value]),
     {Str1, Str2, _} = Args,
     New_value = re:replace(H#xmlText.value, Str1, Str2, [{return,list}]),
-    %% io:format("New value ~p~n", [New_value]),
     [H#xmlText{value = New_value }|r_s(Args, T)];
 
-%% skip other xmerl stuff (like xmlText)
+%% skip other xmerl stuff
 r_s(Args, [H|T], _) ->
     [H|r_s(Args, T)].
 
