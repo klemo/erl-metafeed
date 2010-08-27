@@ -9,7 +9,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -import(feed_parser,
-        [fetch/1, filter/2, sort/2, tail/2, union/2, unique/1]).
+        [fetch/1, filter/2, sort/2, tail/2, union/2, unique/1, replace/2]).
 -import(utils,
         [get_titles/1]).
 
@@ -124,4 +124,20 @@ unique_test_() ->
                        )
                     )
                   )
+    ].
+
+replace_test_() ->
+    [
+     ?_assertMatch([],
+                   replace({"1", "101", ["title"]},
+                           []
+                           )
+                  ),
+     ?_assertMatch(["101"],
+                   get_titles(
+                     replace({"1", "101", "title"},
+                             fetch("test_fix/test2.rss")
+                            )
+                    )
+                   )
     ].

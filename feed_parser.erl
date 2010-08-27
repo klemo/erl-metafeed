@@ -58,10 +58,8 @@ filter({equal, Text, Element}, Items) ->
 %%%-------------------------------------------------------------------
 %% Replace Str1 with Str2 in Elements
 %%%-------------------------------------------------------------------
-replace({Str1, Str2, Elements}, Items) ->
-    lists:map(fun(X) ->
-                      X end,
-              Items).
+replace({Str1, Str2, Element}, Items) ->
+    r_s({Str1, Str2, Element}, Items).
 
 %%%-------------------------------------------------------------------
 %% sort Items based on Element in ascending order
@@ -104,6 +102,7 @@ unique(Items) ->
     % duplicates
     remove_duplicates(
       sort({ascending, "guid"}, Items)).
+
 
 %%%-------------------------------------------------------------------
 %% Feed parser implementation functions.
@@ -196,3 +195,55 @@ contains_text(Text, [Node|Rest]) ->
         nomatch -> contains_text(Text, Rest);
         {match, _} -> true
     end.
+
+%%%-------------------------------------------------------------------
+%% Replace string in parsed feed structure
+%% {Str1, Str2, Element} = Args
+%% Any occurence of Str1 will be replaced with Str2 in elements with
+%% name equal to Element
+%%%-------------------------------------------------------------------
+
+r_s(Args, Item) ->
+    r_s(Args, Item, false).
+
+r_s(_, [], _) ->
+    [];
+
+%% handle xmlElement
+r_s(Args, [H|T], false) when is_record(H, xmlElement) ->
+    %% io:format("Current node ~p~n", [H#xmlElement.name]),
+    {_, _, Element} = Args,
+    Elem_name = atom_to_list(H#xmlElement.name),
+    if
+        %% element name match
+        Elem_name == Element ->
+            %% io:format("Match on ~p~n", [H#xmlElement.name]),
+            New_element = H#xmlElement{
+              content = r_s(Args, H#xmlElement.content, true)
+                           },
+            [New_element|r_s(Args, T)];
+        %% continue recursive traversal
+        true ->
+            %% io:format("No match on ~p~n", [H#xmlElement.name]),
+            New_element = H#xmlElement{
+              content = r_s(Args, H#xmlElement.content, false)
+                           },
+            [New_element|r_s(Args, T)]
+    end;
+
+%% replace strings on this part of tree
+r_s(Args, [H|T], true) when is_record(H, xmlElement) ->
+    %% io:format("Continue with true ~p~n", [H#xmlElement.name]),
+    [r_s(Args, H#xmlElement.content, true)|r_s(Args, T)];
+
+r_s(Args, [H|T], true) when is_record(H, xmlText) ->
+    %% io:format("Replace on ~p~n", [H#xmlText.value]),
+    {Str1, Str2, _} = Args,
+    New_value = re:replace(H#xmlText.value, Str1, Str2, [{return,list}]),
+    %% io:format("New value ~p~n", [New_value]),
+    [H#xmlText{value = New_value }|r_s(Args, T)];
+
+%% skip other xmerl stuff (like xmlText)
+r_s(Args, [H|T], _) ->
+    [H|r_s(Args, T)].
+

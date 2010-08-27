@@ -63,8 +63,8 @@ do({filter, equal, String, Element, L}) ->
     feed_parser:filter({equal, String, Element},
                         do(L));
 
-do({replace, Str1, Str2, Elements, L}) ->
-    feed_parser:replace({Str1, Str2, Elements},
+do({replace, Str1, Str2, Element, L}) ->
+    feed_parser:replace({Str1, Str2, Element},
                         do(L));
 
 do({sort, ascending, Element, L}) ->
