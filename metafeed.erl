@@ -93,7 +93,7 @@ handle_call({new_query, Name, Query}, _From, State) ->
                        list_to_atom(Name),
                        spawn_link(fun() -> interpreter:main(Name, Query) end)),
                      {ok, Name};
-               [_] -> {Name, already_exist}
+               [_] -> {error, already_exist}
            end,
     {reply, Reply, State};
 
@@ -104,7 +104,7 @@ handle_call({run_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
                [_] -> list_to_atom(Name) ! {execute},
-                      {ok}
+                      {ok, Name}
            end,
     {reply, Reply, State};
 
@@ -114,8 +114,9 @@ handle_call({run_query, Name}, _From, State) ->
 handle_call({update_query, Name, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
-               [_] -> list_to_atom(Name) ! {update, Query},
-                      {ok}
+               [_] -> ets:insert(State, {Name, Query}),
+                      list_to_atom(Name) ! {update, Query},
+                      {ok, Name}
            end,
     {reply, Reply, State};
 
