@@ -49,6 +49,14 @@ filter_test_() ->
                             fetch("test_fix/test.rss")
                            )
                     )
+                  ),
+     %% test embedded markup
+     ?_assertMatch(["mimo"],
+                   get_titles(
+                     filter({contains, "mimo", ["description"]},
+                            fetch("test_fix/test3.rss")
+                           )
+                    )
                   )
     ].
 

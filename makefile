@@ -1,7 +1,11 @@
+ifdef debug
+	EFLAGS+=-Ddebug +export_all
+endif
+
 .SUFFIXES: .erl .beam
 
 .erl.beam:
-	erlc -W $<
+	erlc -W $(EFLAGS) $<
 
 ERL = erl -boot start_clean
 
@@ -13,7 +17,10 @@ all: compile
 
 compile: ${MODS:%=%.beam}
 
-test:
+test: compile
+	${ERL} -pa $(CURDIR) -s test_runner test -s init stop
+
+debug: compile
 	${ERL} -pa $(CURDIR) -s test_runner test -s init stop
 
 clean:

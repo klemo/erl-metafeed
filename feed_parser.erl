@@ -179,22 +179,32 @@ eval_equal(Item, Text, Element) ->
 %%%-------------------------------------------------------------------
 eval_contains(_, _, []) ->
     false;
+
 eval_contains(Item, Text, [Element|RestElements]) ->
     XPathExpr = "//" ++ Element ++ "/text()",
-    case contains_text(Text, xmerl_xpath:string(XPathExpr, Item)) of
-        false -> eval_contains(Item, Text, RestElements);
-        true -> true
+    case contains_text(Text,
+                       xmerl_xpath:string(XPathExpr, Item)) of
+        true -> true;
+        _ -> eval_contains(Item, Text, RestElements)
+        
     end.
 
 %%%-------------------------------------------------------------------
-%% Find text in list
+%% Search for string in parsed xml
 %%%-------------------------------------------------------------------
+
 contains_text(_, []) ->
     false;
-contains_text(Text, [Node|Rest]) ->
-    case re:run(Node#xmlText.value, Text) of
-        nomatch -> contains_text(Text, Rest);
-        {match, _} -> true
+
+%% handle xmlElement
+contains_text(Text, [H|T]) when is_record(H, xmlElement) ->
+    [contains_text(Text, H#xmlElement.content)|contains_text(Text, T)];
+
+%% when match is found on xmlText actually replace strings
+contains_text(Text, [H|T]) when is_record(H, xmlText) ->
+    case string:str(H#xmlText.value, Text) of
+        0 -> contains_text(Text, T);
+        _ -> true
     end.
 
 %%%-------------------------------------------------------------------
@@ -240,4 +250,3 @@ r_s(Args, [H|T], true) when is_record(H, xmlText) ->
 %% skip other xmerl stuff
 r_s(Args, [H|T], _) ->
     [H|r_s(Args, T)].
-
