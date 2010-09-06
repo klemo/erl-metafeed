@@ -6,7 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(metafeed).
 -behaviour(gen_server).
--export([start/0, stop/0, new_query/2, run_query/1, update_query/2, remove_query/1, list_queries/0, test_server/0]).
+-export([start/0, stop/0, addq/2, runq/1, updateq/2, removeq/1, listq/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -20,33 +20,20 @@ start() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-new_query(Name, Query) ->
-    gen_server:call(?MODULE, {new_query, Name, Query}).
+addq(Name, Query) ->
+    gen_server:call(?MODULE, {add_query, Name, Query}).
 
-run_query(Name) ->
+runq(Name) ->
     gen_server:call(?MODULE, {run_query, Name}).
 
-update_query(Name, Query) ->
+updateq(Name, Query) ->
     gen_server:call(?MODULE, {update_query, Name, Query}).
 
-remove_query(Name) ->
+removeq(Name) ->
     gen_server:call(?MODULE, {remove_query, Name}).
 
-list_queries() ->
+listq() ->
     gen_server:call(?MODULE, {list_queries}).
-
-test_server() ->
-    start(),
-    new_query("a", {sort, ascending, "title", {filter, contains, "2", ["title"], {fetch,"test_fix/test.rss"}}}),
-    run_query("a"),
-    new_query("b", {tail, 2, {union, {fetch, "test_fix/test.rss"}, {fetch, "test_fix/test2.rss"}}}),
-    run_query("b"),
-    new_query("c", {unique, {union, {fetch, "test_fix/test.rss"}, {fetch, "test_fix/test2.rss"}}}),
-    run_query("c"),
-    new_query("d", {replace, "1", "101", "title", {fetch, "test_fix/test.rss"}}),
-    run_query("d"),
-    stop(),
-    {ok, "test_server"}.
 
 %%%-------------------------------------------------------------------
 %% Metafeed generic server implementation
@@ -56,6 +43,8 @@ test_server() ->
 %% Initialize metafeed's state
 %%%-------------------------------------------------------------------
 init([]) ->
+    % start ibrowse module
+    ibrowse:start(),
     {ok, ets:new(?MODULE, [])}.
 
 %%%-------------------------------------------------------------------
@@ -85,7 +74,7 @@ list_queries(State) ->
 %% Registers new query in system; query is added to query table and
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
-handle_call({new_query, Name, Query}, _From, State) ->
+handle_call({add_query, Name, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name)  of
                [] -> ets:insert(State, {Name, Query}),
                      % spawn new interpreter for new query

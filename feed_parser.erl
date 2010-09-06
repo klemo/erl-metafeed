@@ -1,35 +1,25 @@
 %%%-------------------------------------------------------------------
 %%% File    : feed_parser.erl
 %%% Author  : klemo <klemo@klemo-desktop>
-%%% Description : Fetches feeds from various sources
+%%% Description : Provides basic operations on feeds
 %%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
 %%%-------------------------------------------------------------------
 -module(feed_parser).
 -include_lib("xmerl/include/xmerl.hrl").
--import(utils).
 -export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, replace/2]).
 
+%%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
 %% Feed parser API.
 %% Called from metafeed interpreter module.
 %%%-------------------------------------------------------------------
+%%%-------------------------------------------------------------------
 
 %%%-------------------------------------------------------------------
-%% Read feed from given URL and return list of parsed feed items
+%% Fetch feed from given URL
 %%%-------------------------------------------------------------------
 fetch(Url) ->
-    try xmerl_scan:file(Url) of
-        {error, _} ->
-            throw({fetch, "error reading fetch source", Url});
-        {ParsResult, _} ->
-            case length(xmerl_xpath:string("/rss", ParsResult)) of
-                0 -> throw({fetch, "not an rss feed"});
-                _ -> true
-            end,
-            xmerl_xpath:string("//item", ParsResult)
-    catch
-        _:_ -> throw({fetch, "error reading fetch source", Url})
-    end.
+    parse_feed(aggregator:read(Url)).
 
 %%%-------------------------------------------------------------------
 %% Filter feed items that contain Text in Elements
@@ -104,10 +94,26 @@ unique(Items) ->
     remove_duplicates(
       sort({ascending, "guid"}, Items)).
 
-
+%%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
 %% Feed parser implementation functions.
 %%%-------------------------------------------------------------------
+%%%-------------------------------------------------------------------
+
+%%%-------------------------------------------------------------------
+%% Read feed from given URL and return list of parsed feed items
+%%%-------------------------------------------------------------------
+parse_feed(Data) ->
+    case xmerl_scan:string(Data) of
+        {error, _} ->
+            throw({fetch, "error parsing fetch source"});
+        {ParsResult, _} ->
+            case length(xmerl_xpath:string("/rss", ParsResult)) of
+                0 -> throw({fetch, "not an rss feed"});
+                _ -> true
+            end,
+            xmerl_xpath:string("//item", ParsResult)
+    end.
 
 %%%-------------------------------------------------------------------
 %% Removes duplicate items from feed based on guid

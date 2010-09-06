@@ -9,7 +9,7 @@ endif
 
 ERL = erl -boot start_clean
 
-MODS = metafeed interpreter feed_parser utils \
+MODS = metafeed interpreter feed_parser aggregator utils \
 	feed_parser_tests utils_tests test_runner
 
 all: compile
@@ -18,9 +18,6 @@ all: compile
 compile: ${MODS:%=%.beam}
 
 test: compile
-	${ERL} -pa $(CURDIR) -s test_runner test -s init stop
-
-debug: compile
 	${ERL} -pa $(CURDIR) -s test_runner test -s init stop
 
 clean:
