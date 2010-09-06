@@ -16,8 +16,22 @@
 %%%-------------------------------------------------------------------
 
 %%%-------------------------------------------------------------------
-%% Fetch feed from given URL
+%% Fetch feed from various sources
 %%%-------------------------------------------------------------------
+
+fetch({url, Url}) ->
+    parse_feed(aggregator:read(Url));
+
+fetch({file, FileName}) ->
+    parse_feed(aggregator:read_file(FileName));
+
+fetch({pipe, Name}) ->
+    Status = utils:rpc(list_to_atom(Name), {run}),
+    case Status of
+        {ok, Result} -> Result;
+        {error, _} -> {error, Name}
+    end;
+
 fetch(Url) ->
     parse_feed(aggregator:read(Url)).
 

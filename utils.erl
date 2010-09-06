@@ -8,7 +8,7 @@
 -module(utils).
 
 -include_lib("xmerl/include/xmerl.hrl").
--export([log/2, get_titles/1]).
+-export([log/2, rpc/2, get_titles/1]).
 
 -ifdef(debug).
 -define(LOG(Msg, Args), io:format(Msg, Args)).
@@ -22,6 +22,18 @@
 
 log(Msg, Args) ->
     ?LOG(Msg, Args).
+
+%%%-------------------------------------------------------------------
+%% Remote procedure call
+%% Send request to a server and wait for response
+%%%-------------------------------------------------------------------
+
+rpc(Pid, Request) ->
+    Pid ! {self(), Request},
+    receive
+        Response ->
+            Response
+    end.
 
 %%%-------------------------------------------------------------------
 %% Extracts titles from feed Items and returns them as list.

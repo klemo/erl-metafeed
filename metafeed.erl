@@ -92,8 +92,8 @@ handle_call({add_query, Name, Query}, _From, State) ->
 handle_call({run_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
-               [_] -> list_to_atom(Name) ! {execute},
-                      {ok, Name}
+               [_] -> {ok, Result} = utils:rpc(list_to_atom(Name), {run}),
+                      io:format("~p~n", [utils:get_titles(Result)])
            end,
     {reply, Reply, State};
 
@@ -104,8 +104,7 @@ handle_call({update_query, Name, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
                [_] -> ets:insert(State, {Name, Query}),
-                      list_to_atom(Name) ! {update, Query},
-                      {ok, Name}
+                      utils:rpc(list_to_atom(Name), {update, Query})
            end,
     {reply, Reply, State};
 
@@ -115,7 +114,7 @@ handle_call({update_query, Name, Query}, _From, State) ->
 handle_call({remove_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
-               [_] -> list_to_atom(Name) ! {stop},
+               [_] -> utils:rpc(list_to_atom(Name), {stop}),
                       ets:delete(State, Name),
                       {ok}
            end,

@@ -9,7 +9,6 @@
 
 %%%-------------------------------------------------------------------
 %% Read rss feed from given Url
-%% Failsafe to local file
 %%%-------------------------------------------------------------------
 read(Url) ->
     case ibrowse:send_req(Url, [], get) of

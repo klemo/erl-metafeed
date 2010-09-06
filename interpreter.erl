@@ -18,29 +18,32 @@ main(Name, Query) ->
 main(Name, Query, State) ->
     receive
         %% start query execution
-        {execute} ->
+        {From, {run}} ->
             try do(Query) of
-                [H|T] ->
-                    io:format("Query ~p: ~n~p.~n", [Name, utils:get_titles([H|T])])
+                Result ->
+                    From ! {ok, Result}
             catch
                 _:_ ->
-                    io:format("Error ~p: ~n~p.~n", [Name, erlang:get_stacktrace()])
+                    io:format("Error ~p: ~n~p.~n", [Name, erlang:get_stacktrace()]),
+                    From ! {error, Name}
             end,
             main(Name, Query, State);
         %% update query text
-        {update, NewQuery} ->
+        {From, {update, NewQuery}} ->
+            From ! {ok, Name},
             main(Name, NewQuery, State);
         %% dispach on lambda
-        {call, F} ->
+        {From, {call, F}} ->
             F(),
+            From ! {ok, Name},
             main(Name, Query, State);
         %% display process information
-        {get_info} ->
-            io:format("Process ~p (~p) running erl-metafeed interpreter with state:~n~p~n",
-                      [Name, self(), State]),
+        {From, {get_info}} ->
+            From ! {ok, {Name, self(), State}},
             main(Name, Query, State);
         %% terminate query
-        {stop} ->
+        {From, {stop}} ->
+            From ! {ok, Name},
             {ok}
     end.
 
@@ -49,7 +52,13 @@ main(Name, Query, State) ->
 %%%-------------------------------------------------------------------
 
 do({fetch, Source}) ->
-    feed_parser:fetch(Source);
+    feed_parser:fetch({url, Source});
+
+do({fetch, url, Source}) ->
+    feed_parser:fetch({url, Source});
+
+do({fetch, pipe, Source}) ->
+    feed_parser:fetch({pipe, Source});
 
 do({filter, contains, String, Elements, L}) ->
     feed_parser:filter({contains, String, Elements},
