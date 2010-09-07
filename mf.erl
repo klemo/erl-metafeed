@@ -1,10 +1,10 @@
 %%%-------------------------------------------------------------------
-%%% File    : metafeed.erl
+%%% File    : mf.erl
 %%% Author  : klemo <klemo@klemo-desktop>
 %%% Description : Core metafeed server
 %%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
 %%%-------------------------------------------------------------------
--module(metafeed).
+-module(mf).
 -behaviour(gen_server).
 -export([start/0, stop/0, addq/2, runq/1, updateq/2, removeq/1, listq/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
