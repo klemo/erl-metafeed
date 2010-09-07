@@ -25,9 +25,11 @@ fetch_test_() ->
 filter_test_() ->
     [
      ?_assertMatch([],
-                   filter({contains, "test", ["title"]},
-                          []
-                         )
+                   get_titles(
+                     filter({contains, "test", ["title"]},
+                            {meta, []}
+                           )
+                     )
                   ),
      ?_assertMatch([],
                    get_titles(
@@ -63,9 +65,11 @@ filter_test_() ->
 sort_test_() ->
     [
      ?_assertMatch([],
-                   sort({ascending, "title"},
-                        []
-                       )
+                   get_titles(
+                     sort({ascending, "title"},
+                          {meta, []}
+                         )
+                     )
                   ),
      ?_assertMatch(["1", "2", "3", "45"],
                    get_titles(
@@ -93,7 +97,8 @@ sort_test_() ->
 tail_test_() ->
     [
      ?_assertMatch([],
-                   tail(2, [])
+                   get_titles(
+                     tail(2, {meta, []}))
                   ),
      ?_assertMatch(["1", "2"],
                    get_titles(
@@ -106,8 +111,8 @@ tail_test_() ->
 
 union_test_() ->
     [
-     ?_assertMatch([],
-                   union([], [])
+     ?_assertMatch({{meta1, meta2}, []},
+                   union({meta1, []}, {meta2, []})
                   ),
      ?_assertMatch(["1", "1", "2", "45", "3"],
                    get_titles(
@@ -120,8 +125,8 @@ union_test_() ->
 
 unique_test_() ->
     [
-     ?_assertMatch([],
-                   unique([])
+     ?_assertMatch({meta, []},
+                   unique({meta, []})
                   ),
      ?_assertMatch(["1", "2", "3", "45"],
                    get_titles(
@@ -136,9 +141,9 @@ unique_test_() ->
 
 replace_test_() ->
     [
-     ?_assertMatch([],
+     ?_assertMatch({meta, []},
                    replace({"1", "101", ["title"]},
-                           []
+                           {meta, []}
                            )
                   ),
      ?_assertMatch(["101"],

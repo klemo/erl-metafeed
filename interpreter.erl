@@ -5,8 +5,6 @@
 %%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
 %%%-------------------------------------------------------------------
 -module(interpreter).
--import(feed_parser).
--import(utils).
 -export([main/2]).
 
 %%%-------------------------------------------------------------------

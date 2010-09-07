@@ -17,7 +17,7 @@
 get_titles_test_() ->
     [
      ?_assertMatch([],
-                   get_titles([])
+                   get_titles({meta, []})
                   ),
      ?_assertMatch(["1", "2", "45", "3"],
                    get_titles(
