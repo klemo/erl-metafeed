@@ -9,11 +9,14 @@ endif
 
 ERL = erl -boot start_clean
 
-MODS = mf interpreter feed_parser aggregator utils \
+MODS = mf interpreter feed_parser aggregator utils www_feed \
 	feed_parser_tests utils_tests mf_tests test_runner
 
 all: compile
 	${ERL} -pa $(CURDIR) -s mf start
+
+www: compile
+	yaws -i --runmod mf
 
 compile: ${MODS:%=%.beam}
 

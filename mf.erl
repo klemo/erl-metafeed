@@ -6,7 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(mf).
 -behaviour(gen_server).
--export([start/0, stop/0, addq/2, runq/1, updateq/2, removeq/1, listq/0]).
+-export([start/0, stop/0, addq/2, runq/1, readq/1, updateq/2, removeq/1, listq/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -25,6 +25,9 @@ addq(Name, Query) ->
 
 runq(Name) ->
     gen_server:call(?MODULE, {run_query, Name}).
+
+readq(Name) ->
+    gen_server:call(?MODULE, {read_query, Name}).
 
 updateq(Name, Query) ->
     gen_server:call(?MODULE, {update_query, Name, Query}).
@@ -45,6 +48,8 @@ listq() ->
 init([]) ->
     % start ibrowse module
     ibrowse:start(),
+    % start embedded yaws
+    %%ybed:start(),
     {ok, ets:new(?MODULE, [])}.
 
 %%%-------------------------------------------------------------------
@@ -94,6 +99,17 @@ handle_call({run_query, Name}, _From, State) ->
                [] -> {error, "no such query"};
                [_] -> {ok, Result} = utils:rpc(list_to_atom(Name), {run}),
                       io:format("~p~n", [utils:get_titles(Result)])
+           end,
+    {reply, Reply, State};
+
+%%%-------------------------------------------------------------------
+%% Fetch query results
+%%%-------------------------------------------------------------------
+handle_call({read_query, Name}, _From, State) ->
+    Reply = case ets:lookup(State, Name) of
+               [] -> {error, "no such query"};
+               [_] -> {ok, Result} = utils:rpc(list_to_atom(Name), {read}),
+                      Result
            end,
     {reply, Reply, State};
 
