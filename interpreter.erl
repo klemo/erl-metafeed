@@ -30,6 +30,10 @@ main(Name, Query, State) ->
         {From, {update, NewQuery}} ->
             From ! {ok, Name},
             main(Name, NewQuery, State);
+        %% generate rss feed
+        {From, {read}} ->
+            From ! {ok, utils:gen_rss(do(Query))},
+            main(Name, Query, State);
         %% dispach on lambda
         {From, {call, F}} ->
             F(),
