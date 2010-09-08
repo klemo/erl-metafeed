@@ -50,14 +50,27 @@ get_titles([Item|Rest], Titles) ->
 
 %%%-------------------------------------------------------------------
 %% Generates rss xml document from parsed feed
+%% {RSS element Attrs} = Meta
 %%%-------------------------------------------------------------------
 
 gen_rss({Meta, Items}) ->
-    rss_wrap(
-      lists:flatten(
-        xmerl:export_content(Items, xmerl_xml)
-       ),
-      Meta).
+    RSSElement = wrap_rss(Meta),
+    RSSText = lists:flatten(
+                xmerl:export_content(Items, xmerl_xml)
+               ),
+    lists:flatten(
+      io_lib:format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>~n~s~s~n</channel>~n</rss>", [RSSElement, RSSText])).
 
-rss_wrap(ItemsText, Meta) ->
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++ ItemsText.
+wrap_rss(Meta) ->
+    Attrs = lists:map(
+             fun(X) ->
+                    atom_to_list(X#xmlAttribute.name) ++ "=\"" ++ X#xmlAttribute.value ++ "\" " end,
+             Meta),
+    ChannelElement = gen_rss_channel(),
+    io_lib:format("<rss ~s>~n~s", [Attrs, ChannelElement]).
+
+gen_rss_channel() ->
+    "<channel>\n"
+    "<title>erl-metafeed test</title>\n"
+    "<link>http://gitorious.com/erl-metafeed</link>\n"
+    "<description>erl-metafeed test feed</description>\n".

@@ -125,7 +125,7 @@ unique({Meta, Items}) ->
 %%%--------------------------------------------------------------------------
 
 %%%--------------------------------------------------------------------------
-%% Read feed from given URL and return list of parsed feed items
+%% Read feed from given URL and return parsed feed
 %%%--------------------------------------------------------------------------
 parse_feed(Data) ->
     case xmerl_scan:string(Data) of
@@ -139,8 +139,17 @@ parse_feed(Data) ->
             extract_feed(ParsResult)
     end.
 
+%%%--------------------------------------------------------------------------
+%% Returns tuple of feed Metadata and feed Items
+%%%--------------------------------------------------------------------------
 extract_feed(Feed) ->
-    {meta, xmerl_xpath:string("//item", Feed)}.
+    Meta = read_meta(Feed),
+    Items = xmerl_xpath:string("//item", Feed),
+    {Meta, Items}.
+
+read_meta(Feed) ->
+    [RSSE|_] = xmerl_xpath:string("/rss", Feed),
+    RSSE#xmlElement.attributes.
 
 %%%--------------------------------------------------------------------------
 %% Removes duplicate items from feed based on guid
