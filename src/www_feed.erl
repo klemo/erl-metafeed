@@ -6,7 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(www_feed).
 
--include("/usr/lib/erlang/lib/yaws-1.82/include/yaws_api.hrl").
+-include_lib("yaws/include/yaws_api.hrl").
 -compile(export_all).
 
 out(A) ->
