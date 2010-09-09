@@ -4,24 +4,27 @@ endif
 
 .SUFFIXES: .erl .beam
 
-.erl.beam:
-	erlc -W $(EFLAGS) $<
-
 ERL = erl -boot start_clean
 
-ERL_SRC := $(wildcard *.erl)
-ERL_OBJ := $(patsubst %.erl,%.beam,${ERL_SRC})
+ERL_SRC := $(wildcard src/*.erl)
+ERL_OBJ := $(patsubst src/%.erl,ebin/%.beam,${ERL_SRC})
 
 all: compile
-	${ERL} -pa $(CURDIR) -s mf start
+	${ERL} -pa $(CURDIR)/ebin -s mf start
 
 www: compile
-	yaws -i --runmod mf
+	yaws -i --pa $(CURDIR)/ebin --runmod mf
 
-compile: ${ERL_OBJ}
+ebin/:
+	mkdir ebin
+
+compile: ebin/ ${ERL_OBJ} 
+
+ebin/%.beam: src/%.erl
+	erlc -o $(dir $@) -W $(EFLAGS) $<
 
 test: compile
-	${ERL} -pa $(CURDIR) -s test_runner test -s init stop
+	${ERL} -pa $(CURDIR)/ebin -s test_runner test -s init stop
 
 clean:
 	rm -rf *.beam erl_crash.dump
