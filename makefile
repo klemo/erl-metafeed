@@ -9,8 +9,8 @@ endif
 
 ERL = erl -boot start_clean
 
-MODS = mf interpreter feed_parser aggregator utils www_feed \
-	feed_parser_tests utils_tests mf_tests test_runner
+ERL_SRC := $(wildcard *.erl)
+ERL_OBJ := $(patsubst %.erl,%.beam,${ERL_SRC})
 
 all: compile
 	${ERL} -pa $(CURDIR) -s mf start
@@ -18,7 +18,7 @@ all: compile
 www: compile
 	yaws -i --runmod mf
 
-compile: ${MODS:%=%.beam}
+compile: ${ERL_OBJ}
 
 test: compile
 	${ERL} -pa $(CURDIR) -s test_runner test -s init stop
