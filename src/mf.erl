@@ -108,8 +108,7 @@ handle_call({run_query, Name}, _From, State) ->
 handle_call({read_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
-               [_] -> {ok, Result} = utils:rpc(list_to_atom(Name), {read}),
-                      Result
+               [_] -> utils:rpc(list_to_atom(Name), {read})
            end,
     {reply, Reply, State};
 

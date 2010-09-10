@@ -10,6 +10,12 @@
 -compile(export_all).
 
 out(A) ->
-    io:format("~p, ~p~n", [A#arg.appmoddata, mf:listq()]),
-    Content = mf:readq(A#arg.appmoddata),
-    {content, "application/rss+xml", Content}.
+    Res = mf:readq(A#arg.appmoddata),
+    case Res of
+        {ok, Content} ->
+            {content, "application/rss+xml", Content};
+        {error, E} ->
+            {html,io_lib:format(
+             "<h1>erl-metafeed</h1>"
+             "<p>~s</p>", [E])}
+    end.
