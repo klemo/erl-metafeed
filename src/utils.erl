@@ -58,8 +58,9 @@ gen_rss({Meta, Items}) ->
     RSSText = lists:flatten(
                 xmerl:export_content(Items, xmerl_xml)
                ),
-    lists:flatten(
-      io_lib:format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>~n~s~s~n</channel>~n</rss>", [RSSElement, RSSText])).
+    io_lib:format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>~n~ts~ts~n</channel>~n</rss>",
+                  [RSSElement,
+                   binary_to_list(unicode:characters_to_binary(RSSText))]).
 
 wrap_rss(Meta) ->
     Attrs = lists:map(
@@ -67,7 +68,7 @@ wrap_rss(Meta) ->
                     atom_to_list(X#xmlAttribute.name) ++ "=\"" ++ X#xmlAttribute.value ++ "\" " end,
              Meta),
     ChannelElement = gen_rss_channel(),
-    io_lib:format("<rss ~s>~n~s", [Attrs, ChannelElement]).
+    io_lib:format("<rss ~ts>~n~ts", [Attrs, ChannelElement]).
 
 gen_rss_channel() ->
     "<channel>\n"
