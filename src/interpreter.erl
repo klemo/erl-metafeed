@@ -27,7 +27,7 @@ main(Name, Query, State) ->
             end,
             main(Name, Query, State);
         %% update query text
-        {From, {update, NewQuery}} ->
+        {From, {update, _, NewQuery}} ->
             From ! {ok, Name},
             main(Name, NewQuery, State);
         %% generate rss feed

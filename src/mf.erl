@@ -6,7 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(mf).
 -behaviour(gen_server).
--export([start/0, stop/0, addq/2, runq/1, readq/1, updateq/2, removeq/1, listq/0]).
+-export([start/0, stop/0, addq/3, runq/1, readq/1, updateq/3, removeq/1, listq/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -20,8 +20,8 @@ start() ->
 stop() ->
     gen_server:call(?MODULE, stop).
 
-addq(Name, Query) ->
-    gen_server:call(?MODULE, {add_query, Name, Query}).
+addq(Name, Description, Query) ->
+    gen_server:call(?MODULE, {add_query, Name, Description, Query}).
 
 runq(Name) ->
     gen_server:call(?MODULE, {run_query, Name}).
@@ -29,8 +29,8 @@ runq(Name) ->
 readq(Name) ->
     gen_server:call(?MODULE, {read_query, Name}).
 
-updateq(Name, Query) ->
-    gen_server:call(?MODULE, {update_query, Name, Query}).
+updateq(Name, Description, Query) ->
+    gen_server:call(?MODULE, {update_query, Name, Description, Query}).
 
 removeq(Name) ->
     gen_server:call(?MODULE, {remove_query, Name}).
@@ -48,8 +48,6 @@ listq() ->
 init([]) ->
     % start ibrowse module
     ibrowse:start(),
-    % start embedded yaws
-    %%ybed:start(),
     {ok, ets:new(?MODULE, [])}.
 
 %%%-------------------------------------------------------------------
@@ -69,7 +67,7 @@ clean_up(Proc, State) ->
 %% Return list of all registered queries
 %%%-------------------------------------------------------------------
 list_queries(State) ->
-   ets:tab2list(State).
+    {ok, ets:tab2list(State)}.
 
 %%%-------------------------------------------------------------------
 %% Metafeed gen_server handle calls
@@ -79,9 +77,9 @@ list_queries(State) ->
 %% Registers new query in system; query is added to query table and
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
-handle_call({add_query, Name, Query}, _From, State) ->
+handle_call({add_query, Name, Description, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name)  of
-               [] -> ets:insert(State, {Name, Query}),
+               [] -> ets:insert(State, {Name, Description, Query}),
                      % spawn new interpreter for new query
                      register(
                        list_to_atom(Name),
@@ -115,10 +113,10 @@ handle_call({read_query, Name}, _From, State) ->
 %%%-------------------------------------------------------------------
 %% Updates query text.
 %%%-------------------------------------------------------------------
-handle_call({update_query, Name, Query}, _From, State) ->
+handle_call({update_query, Name, Description, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] -> {error, "no such query"};
-               [_] -> ets:insert(State, {Name, Query}),
+               [_] -> ets:insert(State, {Name, Description, Query}),
                       utils:rpc(list_to_atom(Name), {update, Query})
            end,
     {reply, Reply, State};

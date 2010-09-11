@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>erl-metafeed</title>
+    <meta name="description" content="mashup engine for aggregation, remixing and filtering of web feeds" />
+    <meta name="keywords" content="erlang metafeed remix aggregation feed rss" />
+    <link rel="stylesheet" href="/static/css/style.css" type="text/css" media="screen, projection" />
+  </head>
+  <body>
+    <div class="header">
+      <span class="title">erl-metafeed</span>
+      <br/>
+      <span class="desc">feed mashup engine</span>
+    </div>
+    <div class="content">
+      <erl>
+        out(Arg) ->
+          {ehtml, www_gen:query_list()}.
+      </erl>
+      <erl>
+        out(Arg) -> {ehtml,
+        [{a, [{href, "http://gitorious.org/erl-metafeed"}],  "Source here"}]}.
+      </erl>
+    </div>
+</html>
