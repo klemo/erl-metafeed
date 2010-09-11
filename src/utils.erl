@@ -63,10 +63,12 @@ gen_rss({Meta, Items}) ->
                    binary_to_list(unicode:characters_to_binary(RSSText))]).
 
 wrap_rss(Meta) ->
+    UMeta = sets:to_list(
+             sets:from_list(Meta)),
     Attrs = lists:map(
              fun(X) ->
                     atom_to_list(X#xmlAttribute.name) ++ "=\"" ++ X#xmlAttribute.value ++ "\" " end,
-             Meta),
+             UMeta),
     ChannelElement = gen_rss_channel(),
     io_lib:format("<rss ~ts>~n~ts", [Attrs, ChannelElement]).
 

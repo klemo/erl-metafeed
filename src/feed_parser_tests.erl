@@ -111,8 +111,8 @@ tail_test_() ->
 
 union_test_() ->
     [
-     ?_assertMatch({{meta1, meta2}, []},
-                   union({meta1, []}, {meta2, []})
+     ?_assertMatch({[1,2,3], []},
+                   union({[1,2], []}, {[3], []})
                   ),
      ?_assertMatch(["1", "1", "2", "45", "3"],
                    get_titles(

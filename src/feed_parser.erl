@@ -100,7 +100,7 @@ union({Meta1, Items1}, {Meta2, Items2}) ->
                            NewItems1,
                            NewItems2
                            ),
-    {{Meta1, Meta2}, NewItems}.
+    {lists:append(Meta1, Meta2), NewItems}.
 
 %%%--------------------------------------------------------------------------
 %% Take first Count feed items
