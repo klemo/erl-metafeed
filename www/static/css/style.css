@@ -6,9 +6,14 @@ body {
   min-height: 100%;
   margin: 0;
   padding: 0;
+  text-align: center;
 }
 
-.header .title {
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
   font-weight:bold;
   font-size:48px;
   text-transform: uppercase;
@@ -16,9 +21,18 @@ body {
   color: #C4D318;
 }
 
-.header .desc {
+.subtitle {
   font-size:20px;
   background-color: #28333B;
   color: #7D7B6A;
   font-style: italic;
+}
+
+.content {
+  min-height: 200px;
+}
+
+.footer {
+  text-align: center;
+  font-size: 10px;
 }

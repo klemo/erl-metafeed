@@ -14,5 +14,5 @@ test() ->
     mf:stop().
 
 load_fixtures() ->
-    mf:addq("t1", "test t1", {fetch, "http://feeds.feedburner.com/readwriteweb"}),
-    mf:addq("t2", "test t2", {tail, 3, {fetch, "http://feeds.feedburner.com/readwriteweb"}}).
+    mf:addq("t1", "test t1", {fetch, "test_fix/test3.rss"}),
+    mf:addq("t2", "test t2", {tail, 3, {fetch, pipe, "t1"}}).
