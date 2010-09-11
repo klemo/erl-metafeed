@@ -1,5 +1,5 @@
 body {
-  background-color: #f1efe6;
+  background-color: #ffffff;
   color: #333;
   font: 14px "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
   height: 100%;
@@ -10,6 +10,7 @@ body {
 }
 
 .header {
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 
@@ -24,12 +25,22 @@ body {
 .subtitle {
   font-size:20px;
   background-color: #28333B;
-  color: #7D7B6A;
+  color: #cccccc;
   font-style: italic;
 }
 
+a {
+  color: #aaaaaa;
+  text-decoration: none;
+}
+
+a:hover {
+  background-color: #28333B;
+  color: #C4D318;
+}
+
 .content {
-  min-height: 200px;
+  min-height: 300px;
 }
 
 .footer {

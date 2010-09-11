@@ -14,7 +14,7 @@
       <span class="subtitle">feed mashup engine</span>
     </div>
     <div class="content">
-      <span class="subtitle">Queries</span>
+      <span class="subtitle">reqistered queries</span>
       <br/>
       <erl>
         out(Arg) ->
@@ -22,7 +22,7 @@
       </erl>
     </div>
     <div class="footer">
-      <p> erl-metafeed, 
+      <p> erl-metafeed 2010  
         <erl>
           out(Arg) -> {ehtml,
           [{a, [{href, "http://gitorious.org/erl-metafeed"}],  "Grab source here"}]}.

@@ -11,6 +11,10 @@ query_list() ->
     {ok, L} = mf:listq(),
     lists:map(
       fun({Name, Desc, _}) ->
-              [{a, [{href, "/feed/" ++ Name}],  Desc},
-               {br}] end,
+              {p, [],
+                [{a, [{href, "/feed/" ++ Name}],  Name},
+                {br},
+                {span, [], Desc}]
+               }
+               end,
       L).
