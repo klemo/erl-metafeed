@@ -31,11 +31,11 @@ body {
 
 a {
   color: #aaaaaa;
+  background-color: #28333B;
   text-decoration: none;
 }
 
 a:hover {
-  background-color: #28333B;
   color: #C4D318;
 }
 

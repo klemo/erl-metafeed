@@ -14,12 +14,21 @@
       <span class="subtitle">feed mashup engine</span>
     </div>
     <div class="content">
-      <span class="subtitle">reqistered queries</span>
-      <br/>
-      <erl>
-        out(Arg) ->
+      <div>
+        <p>
+          <a href="/add">Add new query</a>
+          <a href="/list">List all queries</a>
+          <a href="/about">About</a>
+        </p>
+      </div>
+      <div>
+        <span class="subtitle">recent queries</span>
+        <br/>
+        <erl>
+          out(Arg) ->
           {ehtml, www_gen:query_list()}.
-      </erl>
+        </erl>
+      </div>
     </div>
     <div class="footer">
       <p> erl-metafeed 2010  

@@ -5,14 +5,14 @@
 %%% Created :  7 Sep 2010 by klemo <klemo@klemo-desktop>
 %%%-------------------------------------------------------------------
 -module(mf_tests).
--export([test/0, load/0]).
+-export([test/0, l/0]).
 
 test() ->
     mf:start(),
-    load(),
+    l(),
     mf:runq("t2"),
     mf:stop().
 
-load() ->
+l() ->
     mf:addq("t1", "description of t1", {fetch, "test_fix/test3.rss"}),
     mf:addq("t2", "description of t2", {tail, 3, {fetch, pipe, "t1"}}).
