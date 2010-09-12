@@ -5,15 +5,15 @@
 %%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
 %%%-------------------------------------------------------------------
 -module(interpreter).
--export([main/2]).
+-export([main/1]).
 
 %%%-------------------------------------------------------------------
 %% Main interpreter process loop
 %%%-------------------------------------------------------------------
-main(Name, Query) ->
-    main(Name, Query, create_init_state()).
+main(Query) ->
+    main(Query, create_init_state()).
 
-main(Name, Query, State) ->
+main(Query, State) ->
     receive
         %% start query execution
         {From, {run}} ->
@@ -22,30 +22,30 @@ main(Name, Query, State) ->
                     From ! {ok, Result}
             catch
                 _:_ ->
-                    io:format("Error ~p: ~n~p.~n", [Name, erlang:get_stacktrace()]),
-                    From ! {error, Name}
+                    io:format("Error ~p: ~n~p.~n", [self(), erlang:get_stacktrace()]),
+                    From ! {error, self()}
             end,
-            main(Name, Query, State);
+            main(Query, State);
         %% update query text
         {From, {update, _, NewQuery}} ->
-            From ! {ok, Name},
-            main(Name, NewQuery, State);
+            From ! {ok, self()},
+            main(NewQuery, State);
         %% generate rss feed
         {From, {read}} ->
             From ! {ok, utils:gen_rss(do(Query))},
-            main(Name, Query, State);
+            main(Query, State);
         %% dispach on lambda
         {From, {call, F}} ->
             F(),
-            From ! {ok, Name},
-            main(Name, Query, State);
+            From ! {ok, self()},
+            main(Query, State);
         %% display process information
         {From, {get_info}} ->
-            From ! {ok, {Name, self(), State}},
-            main(Name, Query, State);
+            From ! {ok, {self(), State}},
+            main(Query, State);
         %% terminate query
         {From, {stop}} ->
-            From ! {ok, Name},
+            From ! {ok, self()},
             {ok}
     end.
 

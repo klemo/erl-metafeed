@@ -10,7 +10,8 @@
 test() ->
     mf:start(),
     l(),
-    mf:runq("t2"),
+    {ok, [{Name, _, _, _}|_]} = mf:listq(),
+    mf:runq(Name),
     mf:stop().
 
 l() ->

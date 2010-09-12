@@ -26,7 +26,9 @@ fetch({file, FileName}) ->
     parse_feed(aggregator:read_file(FileName));
 
 fetch({pipe, Name}) ->
-    Status = utils:rpc(list_to_atom(Name), {run}),
+    % TODO grab Pid!!
+    Pid = pid,
+    Status = utils:rpc(Pid, {run}),
     case Status of
         {ok, Result} -> Result;
         {error, _} -> {error, Name}

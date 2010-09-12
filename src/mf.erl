@@ -54,14 +54,17 @@ init([]) ->
 %% Terminate all metafeed interpreter processes
 %%%-------------------------------------------------------------------
 clean_up(State) ->
-    clean_up(ets:first(State), State),
+    clean_up(
+      ets:first(State),
+      State),
     ets:delete(State).
 
 clean_up('$end_of_table', _) ->
     ok;
-clean_up(Proc, State) ->
-    list_to_atom(Proc) ! {stop},
-    clean_up(ets:next(State, Proc), State).
+clean_up(Name, State) ->
+    [{_, Pid, _, _}] = ets:lookup(State, Name),
+    Pid ! {stop},
+    clean_up(ets:next(State, Name), State).
 
 %%%-------------------------------------------------------------------
 %% Return list of all registered queries
@@ -79,13 +82,12 @@ list_queries(State) ->
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name)  of
-               [] -> ets:insert(State, {Name, Description, Query}),
-                     % spawn new interpreter for new query
-                     register(
-                       list_to_atom(Name),
-                       spawn_link(fun() -> interpreter:main(Name, Query) end)),
-                     {ok, Name};
-               [_] -> {error, already_exist}
+               [] ->
+                    Pid = spawn_link(fun() -> interpreter:main(Query) end),
+                    ets:insert(State, {Name, Pid, Description, Query}),
+                    {ok, Name};
+               [_] ->
+                    {error, already_exist}
            end,
     {reply, Reply, State};
 
@@ -94,9 +96,11 @@ handle_call({add_query, Name, Description, Query}, _From, State) ->
 %%%-------------------------------------------------------------------
 handle_call({run_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
-               [] -> {error, "no such query"};
-               [_] -> {ok, Result} = utils:rpc(list_to_atom(Name), {run}),
-                      io:format("~p~n", [utils:get_titles(Result)])
+               [] ->
+                    {error, "no such query"};
+               [{Name, Pid, _, _}] ->
+                    {ok, Result} = utils:rpc(Pid, {run}),
+                    io:format("~p~n", [utils:get_titles(Result)])
            end,
     {reply, Reply, State};
 
@@ -105,8 +109,10 @@ handle_call({run_query, Name}, _From, State) ->
 %%%-------------------------------------------------------------------
 handle_call({read_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
-               [] -> {error, "no such query"};
-               [_] -> utils:rpc(list_to_atom(Name), {read})
+               [] ->
+                    {error, "no such query"};
+               [{Name, Pid, _, _}] ->
+                    utils:rpc(Pid, {read})
            end,
     {reply, Reply, State};
 
@@ -115,9 +121,11 @@ handle_call({read_query, Name}, _From, State) ->
 %%%-------------------------------------------------------------------
 handle_call({update_query, Name, Description, Query}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
-               [] -> {error, "no such query"};
-               [_] -> ets:insert(State, {Name, Description, Query}),
-                      utils:rpc(list_to_atom(Name), {update, Query})
+               [] ->
+                    {error, "no such query"};
+               [{Name, Pid, _, _}] ->
+                    ets:insert(State, {Name, Pid, Description, Query}),
+                    utils:rpc(Pid, {update, Query})
            end,
     {reply, Reply, State};
 
@@ -126,10 +134,12 @@ handle_call({update_query, Name, Description, Query}, _From, State) ->
 %%%-------------------------------------------------------------------
 handle_call({remove_query, Name}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
-               [] -> {error, "no such query"};
-               [_] -> utils:rpc(list_to_atom(Name), {stop}),
-                      ets:delete(State, Name),
-                      {ok}
+               [] ->
+                    {error, "no such query"};
+               [{Name, Pid, _, _}] ->
+                    utils:rpc(Pid, {stop}),
+                    ets:delete(State, Pid),
+                    {ok}
            end,
     {reply, Reply, State};
 
