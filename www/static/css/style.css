@@ -33,6 +33,7 @@ a {
   color: #aaaaaa;
   background-color: #28333B;
   text-decoration: none;
+  padding: 0 5px 0 5px;
 }
 
 a:hover {
@@ -41,6 +42,14 @@ a:hover {
 
 .content {
   min-height: 300px;
+}
+
+.feed {
+  margin-bottom: 10px;
+}
+
+.feed .desc {
+  padding-left: 7px;
 }
 
 .footer {
