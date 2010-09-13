@@ -62,8 +62,9 @@ gen_rss({Meta, Items}) ->
                    binary_to_list(unicode:characters_to_binary(RSSText))]).
 
 wrap_rss(Meta) ->
-    UMeta = sets:to_list(
-             sets:from_list(Meta)),
+    %% remove duplicates from rss element attributes
+    UMeta = lists:ukeysort(2, Meta),
+    %% generate rss element attributes xml
     Attrs = lists:map(
              fun(X) ->
                     atom_to_list(X#xmlAttribute.name) ++ "=\"" ++ X#xmlAttribute.value ++ "\" " end,
@@ -71,6 +72,7 @@ wrap_rss(Meta) ->
     ChannelElement = gen_rss_channel(),
     io_lib:format("<rss ~ts>~n~ts", [Attrs, ChannelElement]).
 
+%% generates rss channel element xml representation
 gen_rss_channel() ->
     "<channel>\n"
     "<title>erl-metafeed test</title>\n"
