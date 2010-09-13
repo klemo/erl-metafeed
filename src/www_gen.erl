@@ -9,11 +9,16 @@
 
 query_list() ->
     {ok, L} = mf:listq(),
-    lists:map(
-      fun({Name, _, Desc, _}) ->
-              {p, [{class, "feed"}],
-                [{a, [{href, "/feed/" ++ Name}, {class, "name"}],  Name},
-                {span, [{class, "desc"}], Desc}]
-               }
-               end,
-      L).
+    Feedlist = lists:map(
+                 fun({Name, _, Desc, _}) ->
+                         {tr, [{class, "feed"}],
+                          [{td, [],
+                            [{a, [{href, "/feed/" ++ Name},
+                                  {class, "name"}], 
+                              Name}]},
+                           {td, [],
+                            {span, [{class, "desc"}], Desc}}]}
+                 end,
+                 L),
+    {table, [],
+     [{tbody, [], Feedlist}]}.

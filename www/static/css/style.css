@@ -4,14 +4,13 @@ body {
   font: 14px "Lucida Grande", Verdana, Arial, Helvetica, sans-serif;
   height: 100%;
   min-height: 100%;
-  margin: 0;
+  margin: 20px 40px 0 40px;
   padding: 0;
-  text-align: center;
 }
 
 .header {
-  margin-top: 20px;
   margin-bottom: 20px;
+  text-align: center;
 }
 
 .title {
@@ -41,7 +40,12 @@ a:hover {
 }
 
 .content {
+  width: 900px;
   min-height: 300px;
+}
+
+.add-query {
+  margin-bottom: 30px;
 }
 
 .feed {
@@ -55,4 +59,9 @@ a:hover {
 .footer {
   text-align: center;
   font-size: 10px;
+}
+
+#id_form_add_query {
+  display: none;
+  margin-top: 7px;
 }
