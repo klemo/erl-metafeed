@@ -1,22 +1,18 @@
 Author  : klemo <klemo.vladimir@gmail.com>
-Description : README for erl-metafeed
 Created :  8 Sep 2010 by klemo <klemo.vladimir@gmail.com>
 
-Erl-metafeed is mashup engine written in erlang for aggregation,
+Erl-metafeed is mashup engine written in Erlang for aggregation,
 remixing and filtering of web feeds.
-
 
 === Installation instructions ===
 
-running embedded yaws:
+Dependencies: erlang, yaws and ibrowse.
 
-> cd erl-metafeed
+running erl-metafeed web server on http://localhost:8001:
 > make www
 
 playing with internals:
-
 > make
 
 running tests:
-
-> make tests
+> make test
