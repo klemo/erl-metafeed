@@ -12,7 +12,9 @@
   <body>
     
     <div class="header">
-      <span class="title">erl-metafeed</span>
+        <span class="title">
+          <a href="/">erl-metafeed</a>
+        </span>
       <br/>
       <span class="subtitle">feed mashup engine</span>
     </div>
@@ -68,12 +70,7 @@
     </div>
     
     <div class="footer">
-      <p> erl-metafeed 2010  
-        <erl>
-          out(Arg) -> {ehtml,
-          [{a, [{href, "http://gitorious.org/erl-metafeed"}],  "Grab source here"}]}.
-        </erl>
-      </p>
+      <p> erl-metafeed 2010 - <a href="http://gitorious.org/erl-metafeed">Source</a></p>
     </div>
     
 </html>
