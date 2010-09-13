@@ -9,19 +9,14 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--import(feed_parser,
-        [fetch/1]).
--import(utils,
-        [get_titles/1]).
-
 get_titles_test_() ->
     [
      ?_assertMatch([],
-                   get_titles({meta, []})
+                   utils:get_titles({meta, []})
                   ),
      ?_assertMatch(["1", "2", "45", "3"],
-                   get_titles(
-                     fetch("test_fix/test.rss")
+                   utils:get_titles(
+                     feed_parser:fetch("test_fix/test.rss")
                     )
                   )
     ].

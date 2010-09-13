@@ -27,7 +27,7 @@ main(Query, State) ->
             end,
             main(Query, State);
         %% update query text
-        {From, {update, _, NewQuery}} ->
+        {From, {update, NewQuery}} ->
             From ! {ok, self()},
             main(NewQuery, State);
         %% generate rss feed
@@ -62,41 +62,41 @@ do({fetch, url, Source}) ->
 do({fetch, pipe, Source}) ->
     feed_parser:fetch({pipe, Source});
 
-do({filter, contains, String, Elements, L}) ->
+do({filter, {contains, String, Elements, L}}) ->
     feed_parser:filter({contains, String, Elements},
                         do(L));
 
-do({filter, does_not_contain, String, Elements, L}) ->
+do({filter, {does_not_contain, String, Elements, L}}) ->
     feed_parser:filter({does_not_contain, String, Elements},
                         do(L));
 
-do({filter, equal, String, Element, L}) ->
+do({filter, {equal, String, Element, L}}) ->
     feed_parser:filter({equal, String, Element},
                         do(L));
 
-do({replace, Str1, Str2, Element, L}) ->
+do({replace, {Str1, Str2, Element, L}}) ->
     feed_parser:replace({Str1, Str2, Element},
                         do(L));
 
-do({sort, ascending, Element, L}) ->
+do({sort, {ascending, Element, L}}) ->
     feed_parser:sort({ascending, Element},
                         do(L));
 
-do({sort, descending, Element, L}) ->
+do({sort, {descending, Element, L}}) ->
     feed_parser:sort({descending, Element},
                         do(L));
 
-do({union, L1, L2}) ->
+do({union, {L1, L2}}) ->
     feed_parser:union(do(L1),
                       do(L2));
 
-do({tail, Count, L}) ->
+do({tail, {Count, L}}) ->
     feed_parser:tail(Count, do(L));
 
-do({unique, L}) ->
+do({unique, {L}}) ->
     feed_parser:unique(do(L));
 
-do({reverse, L}) ->
+do({reverse, {L}}) ->
     lists:reverse(do(L)).
 
 %%%-------------------------------------------------------------------

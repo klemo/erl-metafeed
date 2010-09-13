@@ -52,7 +52,6 @@ get_titles([Item|Rest], Titles) ->
 %% Generates rss xml document from parsed feed
 %% {RSS element Attrs} = Meta
 %%%-------------------------------------------------------------------
-
 gen_rss({Meta, Items}) ->
     RSSElement = wrap_rss(Meta),
     RSSText = lists:flatten(

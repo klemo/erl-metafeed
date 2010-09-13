@@ -25,13 +25,11 @@ fetch({url, Url}) ->
 fetch({file, FileName}) ->
     parse_feed(aggregator:read_file(FileName));
 
-fetch({pipe, Name}) ->
-    % TODO grab Pid!!
-    Pid = pid,
+fetch({pipe, Pid}) ->
     Status = utils:rpc(Pid, {run}),
     case Status of
         {ok, Result} -> Result;
-        {error, _} -> {error, Name}
+        {error, _} -> {error, Pid}
     end;
 
 fetch(Url) ->

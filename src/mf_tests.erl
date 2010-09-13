@@ -16,5 +16,5 @@ test() ->
 
 l() ->
     mf:addq("t1", "description", {fetch, "test_fix/test3.rss"}),
-    mf:addq("t2", "description test", {tail, 3, {fetch, pipe, "t1"}}),
-    mf:addq("t3", "lskdfjlsdkfj ksldfj", {union, {fetch, "test_fix/test.rss"}, {fetch, "test_fix/test3.rss"}}).
+    mf:addq("t2", "description test", {tail, {3, {fetch, pipe, "t1"}}}),
+    mf:addq("t3", "lskdfjlsdkfj ksldfj", {union, {{fetch, "test_fix/test.rss"}, {fetch, "test_fix/test3.rss"}}}).
