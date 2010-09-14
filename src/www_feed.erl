@@ -15,7 +15,6 @@ out(A) ->
         {ok, Content} ->
             {content, "application/rss+xml", Content};
         {error, E} ->
-            {html,io_lib:format(
-             "<h1>erl-metafeed</h1>"
-             "<p>~s</p>", [E])}
+            {html, io_lib:format(
+             "erl-metafeed: ~s", [E])}
     end.

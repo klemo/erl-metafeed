@@ -54,7 +54,7 @@ execute_query(Query, From, Calltype) ->
             end
     catch
         _:_ ->
-            From ! {error, self()}
+            From ! {error, "Error in query!"}
     end.
 
 %%%-------------------------------------------------------------------
