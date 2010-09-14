@@ -46,6 +46,10 @@
                   <label for="query-spec">Query specification:</label>
                   <br/>
                   <textarea name="query-spec" rows="10" cols="50"></textarea>
+                  <br/>
+                  <p>Example queries:</p>
+                  <p class="code-example">{tail, {5, {union, {{fetch, "url1"}, {fetch, "url2"}}}}}<br/>
+                  {filter, {contains, "REST", ["title"], {fetch, "url"}}}</p>
                 </td>
               </tr>
               <tr>

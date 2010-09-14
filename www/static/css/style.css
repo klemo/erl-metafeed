@@ -65,3 +65,7 @@ a:hover {
   display: none;
   margin-top: 7px;
 }
+
+.code-example {
+  font: 12px monospace;
+}
