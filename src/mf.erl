@@ -108,7 +108,7 @@ handle_call({add_query, Name, Description, Query}, _From, State) ->
                                {Name, Pid, Description, PQuery}),
                     {ok, Name};
                [_] ->
-                    {error, already_exist}
+                    {error, "Query with that name already exists!"}
            end,
     {reply, Reply, State};
 

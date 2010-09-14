@@ -1,0 +1,9 @@
+<erl>
+out(A) ->
+       {ehtml,
+        www_gen:add_query(
+                postvar(A, "query-name"),
+                postvar(A, "query-desc"),
+                postvar(A, "query-spec")
+                )}.
+</erl>
