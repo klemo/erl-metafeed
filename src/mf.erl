@@ -121,8 +121,14 @@ handle_call({run_query, Name}, _From, State) ->
                [] ->
                     {error, "no such query"};
                [{Name, Pid, _, _}] ->
-                    {ok, Result} = utils:rpc(Pid, {run}),
-                    io:format("~p~n", [utils:get_titles(Result)])
+                    Result = utils:rpc(Pid, {run}),
+                    case Result of
+                        {ok, Content} ->
+                            io:format("~p~n", [utils:get_titles(Content)]);
+                        {error, _} ->
+                            io:format("Error in query interpreter.~n", [])
+                    end,
+                    Result
             end,
     {reply, Reply, State};
 

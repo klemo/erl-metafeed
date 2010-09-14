@@ -17,14 +17,7 @@ main(Query, State) ->
     receive
         %% start query execution
         {From, {run}} ->
-            try do(Query) of
-                Result ->
-                    From ! {ok, Result}
-            catch
-                _:_ ->
-                    io:format("Error ~p: ~n~p.~n", [self(), erlang:get_stacktrace()]),
-                    From ! {error, self()}
-            end,
+            execute_query(Query, From, push),
             main(Query, State);
         %% update query text
         {From, {update, NewQuery}} ->
@@ -32,7 +25,7 @@ main(Query, State) ->
             main(NewQuery, State);
         %% generate rss feed
         {From, {read}} ->
-            From ! {ok, utils:gen_rss(do(Query))},
+            execute_query(Query, From, output),
             main(Query, State);
         %% dispach on lambda
         {From, {call, F}} ->
@@ -47,6 +40,21 @@ main(Query, State) ->
         {From, {stop}} ->
             From ! {ok, self()},
             {ok}
+    end.
+
+%% parse and execute query, catch all errors
+execute_query(Query, From, Calltype) ->
+    try do(Query) of
+        Result ->
+            case Calltype of
+                push ->
+                    From ! {ok, Result};
+                output ->
+                    From ! {ok, utils:gen_rss(Result)}
+            end
+    catch
+        _:_ ->
+            From ! {error, self()}
     end.
 
 %%%-------------------------------------------------------------------
