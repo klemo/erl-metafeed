@@ -39,8 +39,13 @@ add_query(Name, Desc, Spec, Post) ->
                           VTerm),
             case Res of
                 {ok, N} ->
+                    UrlName = re:replace(N, " ", "-", [global, {return,list}]),
                     [{p, [], "Query " ++ N ++ " registered!"},
-                     {a, [{href, "/feed/" ++ N}], "Grab feed here"}];
+                     {a, [{href,
+                           "/feed/" ++ UrlName}], "Grab feed here"},
+                     {br},
+                     {a, [{href,
+                           "/"}], "Return to main page"}];
                 {error, E} ->
                     {p, [], [{p, [], E},
                              {a, [{href, "/"}], "Return to main page"}]}

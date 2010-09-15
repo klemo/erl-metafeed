@@ -99,14 +99,21 @@ prepare_query({Op, Simple}, _) ->
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
-    Reply = case ets:lookup(State, Name)  of
+    UrlName = re:replace(Name, " ", "-", [global, {return,list}]),
+    Reply = case ets:lookup(State, UrlName)  of
                [] ->
-                    PQuery = prepare_query(Query, State),
-                    Pid = spawn_link(
-                            fun() -> interpreter:main(PQuery) end),
-                    ets:insert(State,
-                               {Name, Pid, Description, PQuery}),
-                    {ok, Name};
+                    try prepare_query(Query, State) of
+                        PQuery ->
+                            Pid = spawn_link(
+                                    fun() ->
+                                            interpreter:main(PQuery) end),
+                            ets:insert(State,
+                                       {UrlName, Pid, Description, PQuery}),
+                            {ok, Name}
+                    catch
+                        _:_ ->
+                            {error, "Error in query specification!"}
+                    end;
                [_] ->
                     {error, "Query with that name already exists!"}
            end,

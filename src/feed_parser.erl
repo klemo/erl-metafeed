@@ -288,7 +288,7 @@ r_s(Args, [H|T], true) when is_record(H, xmlElement) ->
 %% when match is found on xmlText actually replace strings
 r_s(Args, [H|T], true) when is_record(H, xmlText) ->
     {Str1, Str2, _} = Args,
-    New_value = re:replace(H#xmlText.value, Str1, Str2, [{return,list}]),
+    New_value = re:replace(H#xmlText.value, Str1, Str2, [global, {return,list}]),
     [H#xmlText{value = New_value }|r_s(Args, T)];
 
 %% skip other xmerl stuff
