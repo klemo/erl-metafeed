@@ -10,11 +10,24 @@
 -compile(export_all).
 
 out(A) ->
-    Res = mf:readq(A#arg.appmoddata),
+    case yaws_api:getvar(A, "format") of
+        {ok, "rss"} ->
+            Format = rss,
+            MimeType = "application/rss+xml";
+        {ok, "json"} ->
+            Format = json,
+            MimeType = "application/json";
+        {ok, _} ->
+            Format = rss,
+            MimeType = "application/rss+xml";
+        undefined ->
+            Format = rss,
+            MimeType = "application/rss+xml"
+    end,
+    Res = mf:readq(A#arg.appmoddata, Format),
     case Res of
         {ok, Content} ->
-            {content, "application/rss+xml", Content};
+            {content, MimeType, Content};
         {error, E} ->
-            {html, io_lib:format(
-             "erl-metafeed: ~s", [E])}
+            {html, io_lib:format("erl-metafeed: ~s", [E])}
     end.

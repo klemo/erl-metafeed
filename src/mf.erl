@@ -6,7 +6,7 @@
 %%%-------------------------------------------------------------------
 -module(mf).
 -behaviour(gen_server).
--export([start/0, stop/0, addq/3, runq/1, readq/1, updateq/3, removeq/1, listq/0, prepare_query/2]).
+-export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/3, removeq/1, listq/0, prepare_query/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -26,8 +26,8 @@ addq(Name, Description, Query) ->
 runq(Name) ->
     gen_server:call(?MODULE, {run_query, Name}).
 
-readq(Name) ->
-    gen_server:call(?MODULE, {read_query, Name}).
+readq(Name, Format) ->
+    gen_server:call(?MODULE, {read_query, Name, Format}).
 
 updateq(Name, Description, Query) ->
     gen_server:call(?MODULE, {update_query, Name, Description, Query}).
@@ -142,12 +142,12 @@ handle_call({run_query, Name}, _From, State) ->
 %%%-------------------------------------------------------------------
 %% Fetch query results
 %%%-------------------------------------------------------------------
-handle_call({read_query, Name}, _From, State) ->
+handle_call({read_query, Name, Format}, _From, State) ->
     Reply = case ets:lookup(State, Name) of
                [] ->
                     {error, "no such query"};
                [{Name, Pid, _, _}] ->
-                    utils:rpc(Pid, {read})
+                    utils:rpc(Pid, {read, Format})
             end,
     {reply, Reply, State};
 
