@@ -99,7 +99,15 @@ json(List) when is_list(List) ->
     json_1(List, []);
 
 json(#xmlElement{name=Name, content=Content}) ->
-    {obj, [{atom_to_binary(Name, unicode), json(Content)}]}.
+    Res = json(Content),
+    case length(Res) of
+        1 ->
+            [H|_] = Res,
+            NewContent = H;
+        _ ->
+            NewContent = Res
+    end,
+    {obj, [{atom_to_binary(Name, unicode), NewContent}]}.
 
 %% ----------
 
