@@ -15,7 +15,7 @@ out(A) ->
             Format = rss,
             MimeType = "application/rss+xml";
         {ok, "json"} ->
-            Format = json,
+            Format = {json, yaws_api:getvar(A, "callback")},
             MimeType = "application/json";
         {ok, _} ->
             Format = rss,

@@ -7,7 +7,7 @@
 -module(utils).
 
 -include_lib("xmerl/include/xmerl.hrl").
--export([log/2, rpc/2, get_titles/1, generate_feed/2, gen_rss/1, gen_json/1]).
+-export([log/2, rpc/2, get_titles/1, generate_feed/2, gen_rss/1, gen_json/2]).
 
 -ifdef(debug).
 -define(LOG(Msg, Args), io:format(Msg, Args)).
@@ -53,8 +53,8 @@ get_titles([Item|Rest], Titles) ->
 generate_feed(Feed, rss) ->
     gen_rss(Feed);
 
-generate_feed(Feed, json) ->
-    gen_json(Feed).
+generate_feed(Feed, {json, JSONP}) ->
+    gen_json(Feed, JSONP).
 
 %%%-------------------------------------------------------------------
 %% Generates rss xml document from parsed feed
@@ -90,11 +90,16 @@ gen_rss_channel() ->
 %%%-------------------------------------------------------------------
 %% Generates json from parsed feed
 %%%-------------------------------------------------------------------
-gen_json({_, Items}) ->
-    rfc4627:encode(json(Items)).
+gen_json({_, Items}, Jsonp) ->
+    JsonBody = rfc4627:encode(json(Items)),
+    case Jsonp of
+        {ok, JsonCallback} ->
+            JsonCallback ++ "(" ++ JsonBody ++ ")";
+        undefined ->
+            JsonBody
+    end.
 
 %% convert xmerl structures to rfc4627 compatible structure
-
 json(List) when is_list(List) ->
     json_1(List, []);
 
