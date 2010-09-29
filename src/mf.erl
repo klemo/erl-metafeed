@@ -48,6 +48,9 @@ listq() ->
 init([]) ->
     % start ibrowse module
     ibrowse:start(),
+    % initialize agregator
+    aggregator:start(),
+    % init state and return
     {ok, ets:new(?MODULE, [])}.
 
 %%%-------------------------------------------------------------------
