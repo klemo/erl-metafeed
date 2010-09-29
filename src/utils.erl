@@ -7,7 +7,7 @@
 -module(utils).
 
 -include_lib("xmerl/include/xmerl.hrl").
--export([log/2, rpc/2, get_titles/1, generate_feed/2, gen_rss/1, gen_json/2]).
+-export([log/2, rpc/2, get_titles/1, generate_feed/2, gen_rss/1, gen_json/2, get_element/2]).
 
 -ifdef(debug).
 -define(LOG(Msg, Args), io:format(Msg, Args)).
@@ -87,17 +87,38 @@ gen_rss_channel() ->
     "<link>http://gitorious.com/erl-metafeed</link>\n"
     "<description>erl-metafeed test feed</description>\n".
 
-%%%-------------------------------------------------------------------
+%%-------------------------------------------------------------------------
+%% @doc
 %% Generates json from parsed feed
-%%%-------------------------------------------------------------------
+%% @end
+%%-------------------------------------------------------------------------
 gen_json({_, Items}, Jsonp) ->
-    JsonBody = rfc4627:encode(json(Items)),
+    JsonBody = rfc4627:encode(xml_to_json(Items)),
     case Jsonp of
         {ok, JsonCallback} ->
             JsonCallback ++ "(" ++ JsonBody ++ ")";
         undefined ->
             JsonBody
     end.
+
+xml_to_json(Items) ->
+    ItemsJson = lists:map(fun(Item) ->
+                                  item_extract_elements(Item) end,
+                          Items),
+    {obj, [{"items", ItemsJson}]}.
+
+item_extract_elements(Item) ->
+    Elements = [title, link, description, pubDate],
+    Content = lists:map(fun(E) ->
+                                ElJson = get_element(E, Item),
+                                {atom_to_binary(E, unicode), ElJson} end,
+                        Elements),
+    {obj, Content}.
+
+get_element(E, Item) ->
+    XPathExpr = "//" ++ atom_to_list(E) ++ "/text()",
+    [Str|_] = json(xmerl_xpath:string(XPathExpr, Item)),
+    Str.
 
 %% convert xmerl structures to rfc4627 compatible structure
 json(List) when is_list(List) ->
