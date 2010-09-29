@@ -29,5 +29,5 @@ out(A) ->
         {ok, Content} ->
             {content, MimeType, Content};
         {error, E} ->
-            {html, io_lib:format("erl-metafeed: ~s", [E])}
+            {html, io_lib:format("error: ~s", [E])}
     end.

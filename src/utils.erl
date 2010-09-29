@@ -119,8 +119,19 @@ json(#xmlElement{name=Name, content=Content}) ->
 json_1([], Acc) ->
     lists:reverse(Acc);
 
-json_1([#xmlElement{}=Element|Rest], Acc) ->
-    json_1(Rest, [json(Element)|Acc]);
+json_1([#xmlElement{name=Name, content=Content}=Element|Rest], Acc) ->
+    IsExport = lists:any(fun(X) ->
+                                 X == Name end,
+                         [item, title, link, description, pubDate]),
+    case IsExport of
+        true ->
+            json_1(Rest, [json(Element)|Acc]);
+        false ->
+            json_1(Rest, Acc)
+    end;
+
+json_1([#xmlText{value=Value1}, #xmlText{value=Value2}|Rest], Acc) ->
+    json_1([#xmlText{value = Value1 ++ Value2} | Rest], Acc);
 
 json_1([#xmlText{value=Value}|Rest], Acc) ->
     %% skip all empty elements
