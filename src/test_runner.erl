@@ -9,6 +9,7 @@
 -export([test/0]).
 
 test() ->
+    mf:start(),
     io:format("Testing utils.~n", []),
     utils_tests:test(),
     io:format("Testing feed_parser.~n", []),

@@ -8,7 +8,6 @@
 -export([test/0, l/0, fixtures/0]).
 
 test() ->
-    mf:start(),
     l(),
     {ok, [{Name, _, _, _}|_]} = mf:listq(),
     mf:runq(Name),
@@ -24,12 +23,12 @@ l() ->
 
 fixtures() ->
     mf:addq("test-1",
-            "fetch 5 recent posts from RWW and TechCrunch",
+            "fetch 5 recent posts from RWW and Wired",
             {tail, {5, {
                       union, {{fetch,
                                "http://feeds.feedburner.com/readwriteweb"},
                               {fetch,
-                               "http://feeds.feedburner.com/TechCrunch"}}}}}),
+                               "http://feeds.wired.com/wired/index"}}}}}),
     mf:addq("test-2",
             "fetches marcell's tweets filtered on #varsavska",
             {filter, {contains, "#varsavska", ["title"],

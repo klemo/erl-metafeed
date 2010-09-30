@@ -6,9 +6,11 @@
 %%%-------------------------------------------------------------------
 -module(aggregator).
 
+-include_lib("xmerl/include/xmerl.hrl").
+
 -include("mf.hrl").
 
--export([start/0, read/1, read_file/1]).
+-export([start/0, read/1, read_file/1, add_feed/1, update_feed/1]).
 
 %%--------------------------------------------------------------------
 %% @spec start() -> {ok, AggregatorPid} | {error, Reason}
@@ -22,13 +24,14 @@ start() ->
         {error,
          {_, {already_exists, _}}} ->
             ok;
-        Error ->
-            {error, Error}
+        _ ->
+            {error}
     end,
     mnesia:start(),
     lists:foreach(fun ({Name, Args}) ->
                           case mnesia:create_table(Name, Args) of
                               {atomic, ok} ->
+                                  io:format("Table ~p created ~n", [Name]),
                                   ok;
                               {aborted, {already_exists, _}} ->
                                   ok
@@ -39,19 +42,104 @@ start() ->
     {ok, Pid}.
 
 %%--------------------------------------------------------------------
-%% @spec start() -> FeedBody | {error, Reason}
+%% @spec add_feed(Source) -> Content | {error, Reason}
+%% @doc Adds feed to aggregator database
+%% @end 
+%%--------------------------------------------------------------------
+add_feed(Source) ->
+    %% todo: parse feed for push spec
+    Attrs = pull,
+    Content = read_raw(Source),
+    Feed = #feed{source=Source, attributes=Attrs, content=Content},
+    T = fun() -> mnesia:write(Feed) end,
+    case mnesia:transaction(T) of
+        {atomic, ok} ->
+            Content;
+        E ->
+            {error, E}
+    end.
+
+update_feed(Source) ->
+    %% check if feed is already in database
+    T = fun() -> mnesia:read({feed, Source}) end,
+    case mnesia:transaction(T) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
+                    add_feed(Source);
+                [#feed{source=Source, content=Content}] ->
+                    {Meta, Items} = Content,
+                    length(Items)
+            end
+    end.
+
+%%--------------------------------------------------------------------
+%% @spec read(Url) -> Content | {error, Reason}
+%% @doc Reads feed from aggregator
+%% @end 
+%%--------------------------------------------------------------------
+read(Source) ->
+    %% check if feed is already in database
+    T = fun() -> mnesia:read({feed, Source}) end,
+    case mnesia:transaction(T) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
+                    add_feed(Source);
+                [#feed{source=Source, content=Content}] ->
+                    io:format("Database hit!! ~n", []),
+                    Content
+            end
+    end.
+
+%%--------------------------------------------------------------------
+%% @spec read_raw(Url) -> Content | {error, Reason}
 %% @doc Reads RSS feed from given Url
 %% @end 
 %%--------------------------------------------------------------------
-read(Url) ->
+read_raw(Url) ->
     case ibrowse:send_req(Url, [], get) of
         {ok, "200", _, Body} ->
-            Body;
+            Content = {ok, Body};
         %% try reading local file (for testing)
         {error, {url_parsing_failed, _}} ->
-            read_file(Url);
-        {_, Status, _, _} -> {error, Status}
-    end.
+            Content = {ok, read_file(Url)};
+        {_, Status, _, _} ->
+            Content = {error, Status}
+    end,
+    parse_feed(Content).
+
+%%%--------------------------------------------------------------------------
+%% Read feed from given URL and return parsed feed
+%%%--------------------------------------------------------------------------
+parse_feed(Content) ->
+    case Content of
+        {ok, Data} ->
+            case xmerl_scan:string(Data) of
+                {error, _} ->
+                    throw({fetch, "error parsing fetch source"});
+                {ParsResult, _} ->
+                    case length(xmerl_xpath:string("/rss", ParsResult)) of
+                        0 -> throw({fetch, "not an rss feed"});
+                        _ -> true
+                    end,
+                    extract_feed(ParsResult)
+            end;
+        E ->
+            E
+    end.    
+
+%%%--------------------------------------------------------------------------
+%% Returns tuple of feed Metadata and feed Items
+%%%--------------------------------------------------------------------------
+extract_feed(Feed) ->
+    Meta = read_meta(Feed),
+    Items = xmerl_xpath:string("//item", Feed),
+    {Meta, Items}.
+
+read_meta(Feed) ->
+    [RSSE|_] = xmerl_xpath:string("/rss", Feed),
+    RSSE#xmlElement.attributes.
 
 %%--------------------------------------------------------------------
 %% @spec loop()
@@ -89,5 +177,5 @@ read_lines(Device, Accum) ->
 
 % mnesia table definitions
 mnesia_tables() ->
-    [{aggregator,
+    [{feed,
       [{attributes, record_info(fields, feed)}]}].
