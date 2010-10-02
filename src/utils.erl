@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : utils.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Misc utility functions for erl-metafeed
-%%% Created : 25 Aug 2010 by klemo <klemo@klemo-desktop>
+%%% Created : 25 Aug 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(utils).
 

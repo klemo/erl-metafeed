@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : mf.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Core metafeed server
-%%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
+%%% Created : 14 Apr 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(mf).
 -behaviour(gen_server).
@@ -48,6 +48,8 @@ listq() ->
 init([]) ->
     % start ibrowse module
     ibrowse:start(),
+    % initialize persistence
+    persistence:start(),
     % initialize agregator
     aggregator:start(),
     % init state and return

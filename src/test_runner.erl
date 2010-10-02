@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
 %%% File    : test_runner.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Test runner for unit test modules
 %%%
-%%% Created : 26 Aug 2010 by klemo <klemo@klemo-desktop>
+%%% Created : 26 Aug 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(test_runner).
 -export([test/0]).

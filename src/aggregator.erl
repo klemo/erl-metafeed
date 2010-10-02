@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : aggregator.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Feed fetcher and aggregator
-%%% Created :  6 Sep 2010 by klemo <klemo@klemo-desktop>
+%%% Created :  6 Sep 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(aggregator).
 
@@ -18,26 +18,6 @@
 %% @end 
 %%--------------------------------------------------------------------
 start() ->
-    case mnesia:create_schema([node()]) of
-        ok ->
-            ok;
-        {error,
-         {_, {already_exists, _}}} ->
-            ok;
-        _ ->
-            {error}
-    end,
-    mnesia:start(),
-    lists:foreach(fun ({Name, Args}) ->
-                          case mnesia:create_table(Name, Args) of
-                              {atomic, ok} ->
-                                  io:format("Table ~p created ~n", [Name]),
-                                  ok;
-                              {aborted, {already_exists, _}} ->
-                                  ok
-                          end
-                  end,
-                  mnesia_tables()),
     Pid = spawn(fun() -> loop() end),
     {ok, Pid}.
 
@@ -174,8 +154,3 @@ read_lines(Device, Accum) ->
         eof  -> file:close(Device), Accum;
         Line -> read_lines(Device, Accum ++ Line)
     end.
-
-% mnesia table definitions
-mnesia_tables() ->
-    [{feed,
-      [{attributes, record_info(fields, feed)}]}].

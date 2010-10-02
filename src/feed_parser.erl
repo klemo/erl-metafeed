@@ -1,8 +1,8 @@
 %%%--------------------------------------------------------------------------
 %%% File    : feed_parser.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Provides basic operations on feeds
-%%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
+%%% Created : 14 Apr 2010 by klemo <klemo.vladimir@gmail.com>
 %%%--------------------------------------------------------------------------
 -module(feed_parser).
 

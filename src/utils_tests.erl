@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
 %%% File    : utils_tests.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Unit tests for utils module
 %%%
-%%% Created : 26 Aug 2010 by klemo <klemo@klemo-desktop>
+%%% Created : 26 Aug 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(utils_tests).
 

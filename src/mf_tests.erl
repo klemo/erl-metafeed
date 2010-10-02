@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : mf_tests.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Metafeed tests
-%%% Created :  7 Sep 2010 by klemo <klemo@klemo-desktop>
+%%% Created :  7 Sep 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(mf_tests).
 -export([test/0, l/0, fixtures/0]).

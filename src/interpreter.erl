@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : interpreter.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Interpreter process for metafeed queries
-%%% Created : 14 Apr 2010 by klemo <klemo@klemo-desktop>
+%%% Created : 14 Apr 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(interpreter).
 -export([main/1]).

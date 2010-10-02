@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : feed_parser_tests.erl
-%%% Author  : klemo <klemo@eee901>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Unit tests for feed parser module
-%%% Created : 22 Aug 2010 by klemo <klemo@eee901>
+%%% Created : 22 Aug 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(feed_parser_tests).
 

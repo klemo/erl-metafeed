@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% File    : www_feed.erl
-%%% Author  : klemo <klemo@klemo-desktop>
+%%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Yaws appmod for delivering feeds
-%%% Created :  8 Sep 2010 by klemo <klemo@klemo-desktop>
+%%% Created :  8 Sep 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(www_feed).
 
