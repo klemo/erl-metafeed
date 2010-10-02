@@ -48,7 +48,7 @@ update_feed(Source) ->
                 [] ->
                     add_feed(Source);
                 [#feed{source=Source, content=Content}] ->
-                    {Meta, Items} = Content,
+                    {_, Items} = Content,
                     length(Items)
             end
     end.
@@ -64,10 +64,11 @@ read(Source) ->
     case mnesia:transaction(T) of
         {atomic, Resp} ->
             case Resp of
+                %% not in database, add feed to aggregator
                 [] ->
                     add_feed(Source);
+                %% found feed in database
                 [#feed{source=Source, content=Content}] ->
-                    io:format("Database hit!! ~n", []),
                     Content
             end
     end.
