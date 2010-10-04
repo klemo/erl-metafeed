@@ -5,6 +5,8 @@
 %%%---------------------------------------------------------------------------------------
 
 -record(feed, {
-          source,
-          attributes,
-          content}).
+          source, %% feed source (url, query name, local file)
+          attributes, %% push|pull
+          timestamp, %% most recent item time
+          content %% feed items
+         }). 

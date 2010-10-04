@@ -11,6 +11,7 @@ test() ->
     l(),
     {ok, [{Name, _, _, _}|_]} = mf:listq(),
     mf:runq(Name),
+    mf:readq("1", {json, undefined}),
     mf:stop().
 
 l() ->
@@ -18,7 +19,7 @@ l() ->
             {fetch, "test_fix/test3.rss"}),
     mf:addq("2", "description test",
             {tail, {3, {fetch, pipe, "t1"}}}),
-    mf:addq("3", "lskdfjlsdkfj ksldfj",
+    mf:addq("3", "desc 3",
             {union, {{fetch, "test_fix/test.rss"}, {fetch, "test_fix/test3.rss"}}}).
 
 fixtures() ->

@@ -6,11 +6,12 @@
 %%%-------------------------------------------------------------------
 -module(aggregator).
 
+-include_lib("stdlib/include/qlc.hrl" ).
 -include_lib("xmerl/include/xmerl.hrl").
 
 -include("mf.hrl").
 
--export([start/0, read/1, read_file/1, add_feed/1, update_feed/1]).
+-export([start/0, read/1, sync_db/0]).
 
 %%--------------------------------------------------------------------
 %% @spec start() -> {ok, AggregatorPid} | {error, Reason}
@@ -18,8 +19,73 @@
 %% @end 
 %%--------------------------------------------------------------------
 start() ->
+    %% spawn main aggregator loop
     Pid = spawn(fun() -> loop() end),
     {ok, Pid}.
+
+%%--------------------------------------------------------------------
+%% @spec loop()
+%% @doc Aggregator loop
+%% @end 
+%%--------------------------------------------------------------------
+
+loop() ->
+    receive
+        {From, {stop}} ->
+            From ! {ok, self()},
+            {ok}
+    %% sync aggregator db every 10 sec
+    after 10000 ->
+            sync_db(),
+            loop()
+    end.
+
+%%--------------------------------------------------------------------
+%% @spec sync_db()
+%% @doc Updates non-push feeds in database
+%% @end 
+%%--------------------------------------------------------------------
+sync_db() ->
+    %% get list of pull feeds
+    Q = qlc:q([X || X <- mnesia:table(feed),
+                    X#feed.attributes == pull]),
+    F = fun() -> qlc:e(Q) end,
+    {atomic, Val} = mnesia:transaction(F),
+    %% sync feeds in db
+    lists:map(fun(Feed) ->
+                      sync_feed(Feed) end,
+              Val).
+
+%% sync local and remote feeds
+sync_feed(Feed) ->
+    %% db timestamp
+    Timestamp = Feed#feed.timestamp,
+    %% get remote feed
+    {RemoteContent, RemoteTimestamp} = read_raw(Feed#feed.source),
+    %% if timestamps not synced
+    case RemoteTimestamp > Timestamp of
+        true ->
+            % extract just items from feeds
+            {_, Items} = Feed#feed.content,
+            {Meta, RemoteItems} = RemoteContent,
+            %% take remote items that are not in db
+            RemoteCut = lists:filter(fun(X) ->
+                                             read_timestamp([X]) > Timestamp end,
+                                     RemoteItems),
+            %% append items in db with remote items
+            NewItems = lists:append(RemoteCut, Items),
+            %% update record in db
+            NewFeed = Feed#feed{timestamp=RemoteTimestamp, content={Meta, NewItems}},
+            T = fun() -> mnesia:write(NewFeed) end,
+            case mnesia:transaction(T) of
+                {atomic, ok} ->
+                    {ok, update_complete, Feed#feed.source};
+                E ->
+                    {error, E}
+            end;
+        false ->
+            {ok, already_up_to_date, Feed#feed.source}
+    end.
 
 %%--------------------------------------------------------------------
 %% @spec add_feed(Source) -> Content | {error, Reason}
@@ -27,10 +93,12 @@ start() ->
 %% @end 
 %%--------------------------------------------------------------------
 add_feed(Source) ->
-    %% todo: parse feed for push spec
+    %% TODO: parse feed for push spec
     Attrs = pull,
-    Content = read_raw(Source),
-    Feed = #feed{source=Source, attributes=Attrs, content=Content},
+    %% read remote feed
+    {Content, Timestamp} = read_raw(Source),
+    %% save feed record to db
+    Feed = #feed{source=Source, attributes=Attrs, timestamp=Timestamp, content=Content},
     T = fun() -> mnesia:write(Feed) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
@@ -39,27 +107,13 @@ add_feed(Source) ->
             {error, E}
     end.
 
-update_feed(Source) ->
-    %% check if feed is already in database
-    T = fun() -> mnesia:read({feed, Source}) end,
-    case mnesia:transaction(T) of
-        {atomic, Resp} ->
-            case Resp of
-                [] ->
-                    add_feed(Source);
-                [#feed{source=Source, content=Content}] ->
-                    {_, Items} = Content,
-                    length(Items)
-            end
-    end.
-
 %%--------------------------------------------------------------------
 %% @spec read(Url) -> Content | {error, Reason}
 %% @doc Reads feed from aggregator
 %% @end 
 %%--------------------------------------------------------------------
 read(Source) ->
-    %% check if feed is already in database
+    %% check feeds db
     T = fun() -> mnesia:read({feed, Source}) end,
     case mnesia:transaction(T) of
         {atomic, Resp} ->
@@ -84,14 +138,14 @@ read_raw(Url) ->
             Content = {ok, Body};
         %% try reading local file (for testing)
         {error, {url_parsing_failed, _}} ->
-            Content = {ok, read_file(Url)};
+            Content = {ok, utils:read_file(Url)};
         {_, Status, _, _} ->
             Content = {error, Status}
     end,
     parse_feed(Content).
 
 %%%--------------------------------------------------------------------------
-%% Read feed from given URL and return parsed feed
+%% xml feed parsing
 %%%--------------------------------------------------------------------------
 parse_feed(Content) ->
     case Content of
@@ -100,6 +154,7 @@ parse_feed(Content) ->
                 {error, _} ->
                     throw({fetch, "error parsing fetch source"});
                 {ParsResult, _} ->
+                    %% simple rss validation
                     case length(xmerl_xpath:string("/rss", ParsResult)) of
                         0 -> throw({fetch, "not an rss feed"});
                         _ -> true
@@ -111,47 +166,24 @@ parse_feed(Content) ->
     end.    
 
 %%%--------------------------------------------------------------------------
-%% Returns tuple of feed Metadata and feed Items
+%% Returns tuple of feed timestamp and feed Metadata/Items
 %%%--------------------------------------------------------------------------
 extract_feed(Feed) ->
     Meta = read_meta(Feed),
+    %% get list of feed items
     Items = xmerl_xpath:string("//item", Feed),
-    {Meta, Items}.
+    Content = {Meta, Items},
+    Timestamp = read_timestamp(Items),
+    {Content, Timestamp}.
 
+% get feed metadata (just root xml namespaces
+% todo: grab feed name, description etc.
 read_meta(Feed) ->
     [RSSE|_] = xmerl_xpath:string("/rss", Feed),
     RSSE#xmlElement.attributes.
 
-%%--------------------------------------------------------------------
-%% @spec loop()
-%% @doc Periodicaly updates feeds database
-%% @end 
-%%--------------------------------------------------------------------
-
-loop() ->
-    receive
-        {From, {stop}} ->
-            From ! {ok, self()},
-            {ok}
-        after 2000 ->
-                update_feeds(),
-                loop()
-        end.
-
-update_feeds() ->
-    {ok}.
-
-%%%-------------------------------------------------------------------
-%% Read contents of local text file
-%%%-------------------------------------------------------------------
-read_file(FileName) ->
-    case file:open(FileName, [read]) of
-        {ok, Device} -> read_lines(Device, "");
-        {error, _} -> {error}
-    end.
-
-read_lines(Device, Accum) ->
-    case io:get_line(Device, "") of
-        eof  -> file:close(Device), Accum;
-        Line -> read_lines(Device, Accum ++ Line)
-    end.
+% get time of most recent feed item
+read_timestamp([Item|_]) ->
+    XPathExpr = "//pubDate/text()",
+    [Node|_] = xmerl_xpath:string(XPathExpr, Item),
+    httpd_util:convert_request_date(Node#xmlText.value).

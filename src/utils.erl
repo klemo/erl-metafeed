@@ -7,7 +7,8 @@
 -module(utils).
 
 -include_lib("xmerl/include/xmerl.hrl").
--export([log/2, rpc/2, get_titles/1, generate_feed/2, gen_rss/1, gen_json/2, get_element/2]).
+-export([log/2, rpc/2, get_titles/1, generate_feed/2,
+         gen_rss/1, gen_json/2, get_element/2, read_file/1]).
 
 -ifdef(debug).
 -define(LOG(Msg, Args), io:format(Msg, Args)).
@@ -165,3 +166,18 @@ json_1([#xmlText{value=Value}|Rest], Acc) ->
 
 json_1([_Other|Rest], Acc) -> 
     json_1(Rest, Acc).
+
+%%%-------------------------------------------------------------------
+%% Read contents of local text file
+%%%-------------------------------------------------------------------
+read_file(FileName) ->
+    case file:open(FileName, [read]) of
+        {ok, Device} -> read_lines(Device, "");
+        {error, _} -> {error}
+    end.
+
+read_lines(Device, Accum) ->
+    case io:get_line(Device, "") of
+        eof  -> file:close(Device), Accum;
+        Line -> read_lines(Device, Accum ++ Line)
+    end.

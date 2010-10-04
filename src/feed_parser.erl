@@ -8,7 +8,8 @@
 
 -include_lib("xmerl/include/xmerl.hrl").
 
--export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, replace/2]).
+-export([fetch/1, filter/2, sort/2, union/2, tail/2, unique/1, replace/2,
+         temporal_order/2]).
 
 %%%--------------------------------------------------------------------------
 %%%--------------------------------------------------------------------------
@@ -176,6 +177,7 @@ compare(Type, Element, X, Y) ->
             FC = fun(DateText) ->
                          httpd_util:convert_request_date(DateText)
                  end;          
+
         true -> FC = fun(Text) -> Text end
     end,
     case Type of
