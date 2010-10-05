@@ -6,7 +6,8 @@
 %%%-------------------------------------------------------------------
 -module(mf).
 -behaviour(gen_server).
--export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/3, removeq/1, listq/0, prepare_query/2]).
+-export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/3,
+         removeq/1, listq/0, prepare_query/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -21,22 +22,28 @@ stop() ->
     gen_server:call(?MODULE, stop).
 
 addq(Name, Description, Query) ->
-    gen_server:call(?MODULE, {add_query, Name, Description, Query}).
+    gen_server:call(?MODULE,
+                    {add_query, Name, Description, Query}).
 
 runq(Name) ->
-    gen_server:call(?MODULE, {run_query, Name}).
+    gen_server:call(?MODULE,
+                    {run_query, Name}).
 
 readq(Name, Format) ->
-    gen_server:call(?MODULE, {read_query, Name, Format}).
+    gen_server:call(?MODULE,
+                    {read_query, Name, Format}).
 
 updateq(Name, Description, Query) ->
-    gen_server:call(?MODULE, {update_query, Name, Description, Query}).
+    gen_server:call(?MODULE,
+                    {update_query, Name, Description, Query}).
 
 removeq(Name) ->
-    gen_server:call(?MODULE, {remove_query, Name}).
+    gen_server:call(?MODULE,
+                    {remove_query, Name}).
 
 listq() ->
-    gen_server:call(?MODULE, {list_queries}).
+    gen_server:call(?MODULE,
+                    {list_queries}).
 
 %%%-------------------------------------------------------------------
 %% Metafeed generic server implementation

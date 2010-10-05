@@ -1,10 +1,5 @@
 <erl>
 out(A) ->
        {ehtml,
-        www_gen:add_query(
-                postvar(A, "query-name"),
-                postvar(A, "query-desc"),
-                postvar(A, "query-spec"),
-                yaws_api:parse_post(A)
-                )}.
+        www_gen:add_query(A)}.
 </erl>

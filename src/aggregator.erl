@@ -69,13 +69,15 @@ sync_feed(Feed) ->
             {_, Items} = Feed#feed.content,
             {Meta, RemoteItems} = RemoteContent,
             %% take remote items that are not in db
-            RemoteCut = lists:filter(fun(X) ->
-                                             read_timestamp([X]) > Timestamp end,
-                                     RemoteItems),
+            RemoteCut = lists:filter(
+                          fun(X) ->
+                                  read_timestamp([X]) > Timestamp end,
+                          RemoteItems),
             %% append items in db with remote items
             NewItems = lists:append(RemoteCut, Items),
             %% update record in db
-            NewFeed = Feed#feed{timestamp=RemoteTimestamp, content={Meta, NewItems}},
+            NewFeed = Feed#feed{timestamp=RemoteTimestamp,
+                                content={Meta, NewItems}},
             T = fun() -> mnesia:write(NewFeed) end,
             case mnesia:transaction(T) of
                 {atomic, ok} ->
