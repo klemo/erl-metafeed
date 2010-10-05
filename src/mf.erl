@@ -22,8 +22,14 @@ stop() ->
     gen_server:call(?MODULE, stop).
 
 addq(Name, Description, Query) ->
-    gen_server:call(?MODULE,
-                    {add_query, Name, Description, Query}).
+    Res = gen_server:call(?MODULE,
+                          {add_query, Name, Description, Query}),
+    case Res of
+        {ok, UrlName} ->
+            gen_server:call(?MODULE,
+                            {run_query, UrlName});
+        E -> E
+    end.
 
 runq(Name) ->
     gen_server:call(?MODULE,
@@ -116,12 +122,14 @@ handle_call({add_query, Name, Description, Query}, _From, State) ->
                [] ->
                     try prepare_query(Query, State) of
                         PQuery ->
-                            Pid = spawn_link(
+                            %% spawn new process for query
+                            Pid = spawn(
                                     fun() ->
                                             interpreter:main(PQuery) end),
+                            %% insert query info in ets table
                             ets:insert(State,
                                        {UrlName, Pid, Description, PQuery}),
-                            {ok, Name}
+                            {ok, UrlName}
                     catch
                         _:_ ->
                             {error, "Error in query specification!"}
@@ -131,7 +139,6 @@ handle_call({add_query, Name, Description, Query}, _From, State) ->
            end,
     {reply, Reply, State};
 
-
 %%%-------------------------------------------------------------------
 %% Starts execution of query by sending message to matching process.
 %%%-------------------------------------------------------------------
@@ -140,14 +147,8 @@ handle_call({run_query, Name}, _From, State) ->
                [] ->
                     {error, "no such query"};
                [{Name, Pid, _, _}] ->
-                    Result = utils:rpc(Pid, {run}),
-                    case Result of
-                        {ok, Content} ->
-                            io:format("~p~n", [utils:get_titles(Content)]);
-                        {error, _} ->
-                            io:format("Error in query interpreter.~n", [])
-                    end,
-                    Result
+                    Pid ! {run},
+                    {ok, Name}
             end,
     {reply, Reply, State};
 
