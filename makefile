@@ -27,4 +27,4 @@ test: compile
 	${ERL} -pa $(CURDIR)/ebin -s test_runner test -s init stop
 
 clean:
-	rm -rf ebin/ erl_crash.dump *.log *.access
+	rm -rf ebin/ Mnesia* erl_crash.dump *.log *.access

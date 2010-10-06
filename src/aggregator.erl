@@ -11,7 +11,7 @@
 
 -include("mf.hrl").
 
--export([start/0, read/1, sync_db/0]).
+-export([start/0, read/1, sync_db/0, add_feed/2]).
 
 %%--------------------------------------------------------------------
 %% @spec start() -> {ok, AggregatorPid} | {error, Reason}
@@ -105,6 +105,26 @@ add_feed(Source) ->
     case mnesia:transaction(T) of
         {atomic, ok} ->
             Content;
+        E ->
+            {error, E}
+    end.
+
+%%--------------------------------------------------------------------
+%% @spec add_feed(Name, Feed) -> Content | {error, Reason}
+%% @doc Adds query result to aggregator database
+%% @end 
+%%--------------------------------------------------------------------
+add_feed(Name, Content) ->
+    Attrs = pipe,
+    {_, Items} = Content,
+    Timestamp = read_timestamp(Items),
+    %% save feed record to db
+    Feed = #feed{source=Name, attributes=Attrs,
+                 timestamp=Timestamp, content=Content},
+    T = fun() -> mnesia:write(Feed) end,
+    case mnesia:transaction(T) of
+        {atomic, ok} ->
+            {ok, Name};
         E ->
             {error, E}
     end.

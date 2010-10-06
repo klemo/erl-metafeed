@@ -17,7 +17,7 @@ l() ->
     mf:addq("1", "description",
             {fetch, "test_fix/test3.rss"}),
     mf:addq("2", "description test",
-            {tail, {3, {fetch, pipe, "t1"}}}),
+            {tail, {3, {fetch, "1"}}}),
     mf:addq("3", "desc 3",
             {union, {{fetch, "test_fix/test.rss"}, {fetch, "test_fix/test3.rss"}}}).
 

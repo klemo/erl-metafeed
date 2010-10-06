@@ -22,14 +22,8 @@ stop() ->
     gen_server:call(?MODULE, stop).
 
 addq(Name, Description, Query) ->
-    Res = gen_server:call(?MODULE,
-                          {add_query, Name, Description, Query}),
-    case Res of
-        {ok, UrlName} ->
-            gen_server:call(?MODULE,
-                            {run_query, UrlName});
-        E -> E
-    end.
+    gen_server:call(?MODULE,
+                    {add_query, Name, Description, Query}).
 
 runq(Name) ->
     gen_server:call(?MODULE,
@@ -118,25 +112,20 @@ prepare_query({Op, Simple}, _) ->
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
     UrlName = re:replace(Name, " ", "-", [global, {return,list}]),
-    Reply = case ets:lookup(State, UrlName)  of
-               [] ->
-                    try prepare_query(Query, State) of
-                        PQuery ->
-                            %% spawn new process for query
-                            Pid = spawn(
-                                    fun() ->
-                                            interpreter:main(PQuery) end),
-                            %% insert query info in ets table
-                            ets:insert(State,
-                                       {UrlName, Pid, Description, PQuery}),
-                            {ok, UrlName}
-                    catch
-                        _:_ ->
-                            {error, "Error in query specification!"}
-                    end;
-               [_] ->
+    Reply = case ets:lookup(State, UrlName) of
+                [] ->
+                    %% spawn new process for query
+                    Pid = spawn(fun() ->
+                                        interpreter:main({UrlName, Query}) end),
+                    %% initial query run
+                    Pid ! {self(), run},
+                    %% insert query info in ets table
+                    ets:insert(State,
+                               {UrlName, Pid, Description, Query}),
+                    {ok, add, UrlName};
+                [_] ->
                     {error, "Query with that name already exists!"}
-           end,
+            end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
@@ -147,8 +136,8 @@ handle_call({run_query, Name}, _From, State) ->
                [] ->
                     {error, "no such query"};
                [{Name, Pid, _, _}] ->
-                    Pid ! {run},
-                    {ok, Name}
+                    Pid ! {self(), run},
+                    {ok, run, Name}
             end,
     {reply, Reply, State};
 

@@ -10,14 +10,14 @@
 %%%-------------------------------------------------------------------
 %% Main interpreter process loop
 %%%-------------------------------------------------------------------
-main(Query) ->
-    main(Query, create_init_state()).
+main({Name, Query}) ->
+    main(Query, create_init_state(Name)).
 
 main(Query, State) ->
     receive
         %% start query execution
-        {From, {run}} ->
-            execute_query(Query, From, push),
+        {From, run} ->
+            execute_query(Query, From, push, State),
             main(Query, State);
         %% update query text
         {From, {update, NewQuery}} ->
@@ -43,16 +43,16 @@ main(Query, State) ->
     end.
 
 %% parse and execute query, catch all errors
-
-%% parse and execute query, catch all errors
-execute_query(Query, From, push) ->
+execute_query(Query, From, push, State) ->
     try do(Query) of
         Result ->
-            From ! {ok, Result}
+            From ! {ok, Result},
+            {name, Name} = State,
+            aggregator:add_feed(Name, Result)
     catch
         _:_ ->
             From ! {error, "Error in query!"}
-    end.
+    end;
 
 execute_query(Query, From, output, Format) ->
     try do(Query) of
@@ -117,5 +117,5 @@ do({reverse, {L}}) ->
 %% State management
 %%%-------------------------------------------------------------------
 
-create_init_state() ->
-    {timestamp, 0}.
+create_init_state(Name) ->
+    {name, Name}.
