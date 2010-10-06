@@ -20,7 +20,12 @@ query_list() ->
                                   {class, "name"}], 
                               Name}]},
                            {td, [],
-                            {span, [{class, "desc"}], Desc}}]}
+                            {span, [{class, "desc"}], Desc}},
+                          {td, [],
+                            [{a, [{href, "/change-feed/" ++ Name},
+                                  {class, "change"}],
+                             "Change"}]}
+                           ]}
                  end,
                  L),
     {table, [],

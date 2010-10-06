@@ -49,7 +49,7 @@
                   <br/>
                   <p>Example queries:</p>
                   <p class="code-example">{tail, {5, {union, {{fetch, "url1"}, {fetch, "url2"}}}}}<br/>
-                  {filter, {contains, "REST", ["title"], {fetch, "url"}}}</p>
+                  {filter, {contains, "some text", ["title"], {fetch, "url"}}}</p>
                 </td>
               </tr>
               <tr>

@@ -56,6 +56,11 @@ a:hover {
   padding-left: 7px;
 }
 
+.feed .change {
+  background-color: #ffffff;
+  font-style: italic;
+}
+
 .footer {
   text-align: center;
   font-size: 10px;
