@@ -8,7 +8,7 @@
 
 -behaviour(gen_server).
 
--export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/3,
+-export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/2,
          removeq/1, listq/0, prepare_query/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -29,21 +29,21 @@ addq(Name, Description, Query) ->
     gen_server:call(?MODULE,
                     {add_query, Name, Description, Query}).
 
-runq(Name) ->
+runq(Id) ->
     gen_server:call(?MODULE,
-                    {run_query, Name}).
+                    {run_query, Id}).
 
-readq(Name, Format) ->
+readq(Id, Format) ->
     gen_server:call(?MODULE,
-                    {read_query, Name, Format}).
+                    {read_query, Id, Format}).
 
-updateq(Name, Description, Query) ->
+updateq(Id, {Name, Description, Query}) ->
     gen_server:call(?MODULE,
-                    {update_query, Name, Description, Query}).
+                    {update_query, Id, {Name, Description, Query}}).
 
-removeq(Name) ->
+removeq(Id) ->
     gen_server:call(?MODULE,
-                    {remove_query, Name}).
+                    {remove_query, Id}).
 
 listq() ->
     gen_server:call(?MODULE,
@@ -106,37 +106,30 @@ prepare_query({Op, Simple}, _) ->
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
-    UrlName = re:replace(Name, " ", "-", [global, {return,list}]),
-    Reply = case persistence:get_metafeed(UrlName) of
-        {atomic, Resp} ->
-            case Resp of
-                [] ->
-                    %% spawn new process for query
-                    Pid = spawn(fun() ->
-                      interpreter:main({UrlName, Query}) end),
-                    %% initial query run
-                    Pid ! {self(), run},
-                    persistence:add_metafeed({UrlName, Description, Query, Pid}),
-                    {ok, add, UrlName};
-                %% found metafeed in database
-                [#metafeed{name=UrlName}] ->
-                    {error, "Query with that name already exists!"}
-            end
-    end,
+    %% todo: make real random generator
+    Id = integer_to_list(random:uniform(1000)),
+    %% spawn new process for query
+    Pid = spawn(
+            fun() ->
+                    interpreter:main({Id, Query}) end),
+    %% initial query run
+    Pid ! {self(), run},
+    persistence:add_metafeed({Id, Name, Description, Query, Pid}),
+    Reply = {ok, add, Id},
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Starts execution of query by sending message to matching process.
 %%%-------------------------------------------------------------------
-handle_call({run_query, Name}, _From, State) ->
-    Reply = case persistence:get_metafeed(Name) of
+handle_call({run_query, Id}, _From, State) ->
+    Reply = case persistence:get_metafeed(Id) of
         {atomic, Resp} ->
             case Resp of
                 [] ->
                     {error, "no such query"};
                 [#metafeed{pid=Pid}] ->
                     Pid ! {self(), run},
-                    {ok, run, Name}
+                    {ok, run, Id}
             end
     end,
     {reply, Reply, State};
@@ -144,8 +137,8 @@ handle_call({run_query, Name}, _From, State) ->
 %%%-------------------------------------------------------------------
 %% Fetch query results
 %%%-------------------------------------------------------------------
-handle_call({read_query, Name, Format}, _From, State) ->
-    Reply = case persistence:get_metafeed(Name) of
+handle_call({read_query, Id, Format}, _From, State) ->
+    Reply = case persistence:get_metafeed(Id) of
         {atomic, Resp} ->
             case Resp of
                 [] ->
@@ -159,15 +152,15 @@ handle_call({read_query, Name, Format}, _From, State) ->
 %%%-------------------------------------------------------------------
 %% Updates query text.
 %%%-------------------------------------------------------------------
-handle_call({update_query, Name, Description, Query}, _From, State) ->
-    Reply = case persistence:get_metafeed(Name) of
+handle_call({update_query, Id, {Name, Description, Query}}, _From, State) ->
+    Reply = case persistence:get_metafeed(Id) of
         {atomic, Resp} ->
             case Resp of
                 [] ->
                     {error, "no such query"};
                 [#metafeed{pid=Pid}] ->
                     utils:rpc(Pid, {update, Query}),
-                    persistence:add_metafeed({Name, Description, Query, Pid})
+                    persistence:add_metafeed({Id, Name, Description, Query, Pid})
             end
     end,
     {reply, Reply, State};
@@ -175,15 +168,15 @@ handle_call({update_query, Name, Description, Query}, _From, State) ->
 %%%-------------------------------------------------------------------
 %% Removes query from metafeed system.
 %%%-------------------------------------------------------------------
-handle_call({remove_query, Name}, _From, State) ->
-    Reply = case persistence:get_metafeed(Name) of
+handle_call({remove_query, Id}, _From, State) ->
+    Reply = case persistence:get_metafeed(Id) of
         {atomic, Resp} ->
             case Resp of
                 [] ->
                     {error, "no such query"};
                 [#metafeed{pid=Pid}] ->
                     utils:rpc(Pid, {stop}),
-                    persistence:delete_metafeed(Name)
+                    persistence:delete_metafeed(Id)
             end
     end,
     {reply, Reply, State};

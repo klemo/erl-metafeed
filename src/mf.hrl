@@ -12,6 +12,7 @@
          }).
 
 -record(metafeed, {
+          id,
           name,
           description,
           source,

@@ -110,21 +110,21 @@ add_feed(Source) ->
     end.
 
 %%--------------------------------------------------------------------
-%% @spec sync_query(Name, Feed) -> Content | {error, Reason}
+%% @spec sync_query(Id, Feed) -> Content | {error, Reason}
 %% @doc Updates query result to aggregator database
 %% @end 
 %%--------------------------------------------------------------------
-sync_query(Name, Content) ->
+sync_query(Id, Content) ->
     Attrs = pipe,
     {_, Items} = Content,
     Timestamp = read_timestamp(Items),
     %% save feed record to db
-    Feed = #feed{source=Name, attributes=Attrs,
+    Feed = #feed{source=Id, attributes=Attrs,
                  timestamp=Timestamp, content=Content},
     T = fun() -> mnesia:write(Feed) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
-            {ok, Name};
+            {ok, Id};
         E ->
             {error, E}
     end.

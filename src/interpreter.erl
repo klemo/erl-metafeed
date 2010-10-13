@@ -10,8 +10,8 @@
 %%%-------------------------------------------------------------------
 %% Main interpreter process loop
 %%%-------------------------------------------------------------------
-main({Name, Query}) ->
-    main(Query, create_init_state(Name)).
+main({Id, Query}) ->
+    main(Query, create_init_state(Id)).
 
 main(Query, State) ->
     receive
@@ -47,8 +47,8 @@ execute_query(Query, From, push, State) ->
     try do(Query) of
         Result ->
             From ! {ok, Result},
-            {name, Name} = State,
-            aggregator:sync_query(Name, Result)
+            {id, Id} = State,
+            aggregator:sync_query(Id, Result)
     catch
         _:_ ->
             From ! {error, "Error in query!"}
@@ -117,5 +117,5 @@ do({reverse, {L}}) ->
 %% State management
 %%%-------------------------------------------------------------------
 
-create_init_state(Name) ->
-    {name, Name}.
+create_init_state(Id) ->
+    {id, Id}.

@@ -50,15 +50,21 @@ boot_schema() ->
 spawn_queries() ->
     case get_metafeed_list() of
         {ok, L} ->
-            io:format("~p: Spawning processes for queries:~n",
-                      [?MODULE]),
+            case length(L) of
+                0 ->
+                    ok;
+                _ ->
+                    io:format("~p: Spawning processes for queries:~n",
+                              [?MODULE])
+            end,
             lists:map(fun(X) ->
                               %% spawn new process for query
                               Pid = spawn(fun() ->
-                                interpreter:main({X#metafeed.name, X#metafeed.source}) end),
+                                interpreter:main({X#metafeed.id, X#metafeed.source}) end),
                               %% initial query run
                               Pid ! {self(), run},
-                              add_metafeed({X#metafeed.name,
+                              add_metafeed({X#metafeed.id,
+                                            X#metafeed.name,
                                             X#metafeed.description,
                                             X#metafeed.source,
                                             Pid
@@ -72,42 +78,44 @@ spawn_queries() ->
     end.
 
 %%--------------------------------------------------------------------
-%% @spec get_metafeed(Name) -> {ok, Metafeed} | {error, Reason}
+%% @spec get_metafeed(Id) -> {ok, Metafeed} | {error, Reason}
 %% @doc Read metafeed from db
 %% @end 
 %%--------------------------------------------------------------------
-get_metafeed(Name) ->
-    T = fun() -> mnesia:read({metafeed, Name}) end,
+get_metafeed(Id) ->
+    T = fun() -> mnesia:read({metafeed, Id}) end,
     mnesia:transaction(T).
 
 %%--------------------------------------------------------------------
-%% @spec add_metafeed({}) -> {ok, Name} | {error, Reason}
+%% @spec add_metafeed({}) -> {ok, Id} | {error, Reason}
 %% @doc Add metafeed to db
 %% @end 
 %%--------------------------------------------------------------------
-add_metafeed({Name, Description, Source, Pid}) ->
-    MF = #metafeed{name=Name,
-                   description=Description,
-                   source=Source,
-                   pid=Pid},
+add_metafeed({Id, Name, Description, Source, Pid}) ->
+    MF = #metafeed{
+      id=Id,
+      name=Name,
+      description=Description,
+      source=Source,
+      pid=Pid},
     T = fun() -> mnesia:write(MF) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
-            {ok, Name};
+            {ok, Id};
         E ->
             {error, E}
     end.
 
 %%--------------------------------------------------------------------
-%% @spec del_metafeed(Name) -> {ok, Name} | {error, Reason}
+%% @spec del_metafeed(Id) -> {ok, Id} | {error, Reason}
 %% @doc Delete metafeed from db
 %% @end 
 %%--------------------------------------------------------------------
-del_metafeed(Name) ->
-    T = fun() -> mnesia:delete({metafeed, Name}) end,
+del_metafeed(Id) ->
+    T = fun() -> mnesia:delete({metafeed, Id}) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
-            {ok, Name};
+            {ok, Id};
         E ->
             {error, E}
     end.
