@@ -9,8 +9,7 @@
 
 test() ->
     l(),
-    {ok, [{Name, _, _, _}|_]} = mf:listq(),
-    mf:readq(Name, {json, undefined}),
+    mf:readq("1", {json, undefined}),
     mf:stop().
 
 l() ->

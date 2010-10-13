@@ -39,6 +39,11 @@ a:hover {
   color: #C4D318;
 }
 
+.sublink {
+  background-color: #ffffff;
+  font-style: italic;
+}
+
 .content {
   width: 900px;
   min-height: 300px;
@@ -54,11 +59,6 @@ a:hover {
 
 .feed .desc {
   padding-left: 7px;
-}
-
-.feed .change {
-  background-color: #ffffff;
-  font-style: italic;
 }
 
 .footer {

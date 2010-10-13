@@ -10,6 +10,16 @@
 -compile(export_all).
 
 out(A) ->
+    Act = lists:sublist(A#arg.appmoddata, 7),
+    case Act of
+        "change/" ->
+            change_query(string:substr(Act, 8));
+        _ ->
+            feed(A)
+    end.
+
+%% renders query result as feed
+feed(A) ->
     case yaws_api:getvar(A, "format") of
         {ok, "rss"} ->
             Format = rss,
@@ -28,6 +38,15 @@ out(A) ->
     case Res of
         {ok, Content} ->
             {content, MimeType, Content};
+        {error, E} ->
+            {html, io_lib:format("error: ~s", [E])}
+    end.
+
+change_query(Name) ->
+    Res = mf:reads(Name),
+    case Res of
+        {ok, Content} ->
+            {html, Content};
         {error, E} ->
             {html, io_lib:format("error: ~s", [E])}
     end.

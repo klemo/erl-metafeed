@@ -9,22 +9,24 @@
 
 -include_lib("yaws/include/yaws_api.hrl").
 
+-include("mf.hrl").
+
 %% generates list of registered queries as html table
 query_list() ->
     {ok, L} = mf:listq(),
     Feedlist = lists:map(
-                 fun({Name, _, Desc, _}) ->
+                 fun(X) ->
                          {tr, [{class, "feed"}],
                           [{td, [],
-                            [{a, [{href, "/feed/" ++ Name},
+                            [{a, [{href, "/feed/" ++ X#metafeed.name},
                                   {class, "name"}], 
-                              Name}]},
+                              X#metafeed.name}]},
                            {td, [],
-                            {span, [{class, "desc"}], Desc}},
+                            {span, [{class, "desc"}], X#metafeed.description}},
                           {td, [],
-                            [{a, [{href, "/change-feed/" ++ Name},
-                                  {class, "change"}],
-                             "Change"}]}
+                            [{a, [{href, "/feed/change/" ++ X#metafeed.name},
+                                  {class, "sublink"}],
+                             "Change query"}]}
                            ]}
                  end,
                  L),
@@ -52,7 +54,7 @@ add_query(A) ->
                           ValDesc,
                           VTerm),
             case Res of
-                {ok, N} ->
+                {ok, add, N} ->
                     UrlName = re:replace(N, " ", "-", [global, {return,list}]),
                     [{p, [], "Query " ++ N ++ " registered!"},
                      {a, [{href,

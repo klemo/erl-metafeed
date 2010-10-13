@@ -48,7 +48,7 @@ execute_query(Query, From, push, State) ->
         Result ->
             From ! {ok, Result},
             {name, Name} = State,
-            aggregator:add_feed(Name, Result)
+            aggregator:sync_query(Name, Result)
     catch
         _:_ ->
             From ! {error, "Error in query!"}
@@ -59,8 +59,8 @@ execute_query(Query, From, output, Format) ->
         Result ->
             From ! {ok, utils:generate_feed(Result, Format)}
     catch
-        _:_ ->
-            From ! {error, "Error in query!"}
+        error:E ->
+            From ! {error, E}
     end.
 
 %%%-------------------------------------------------------------------

@@ -11,7 +11,7 @@
 
 -include("mf.hrl").
 
--export([start/0, read/1, sync_db/0, add_feed/2]).
+-export([start/0, read/1, sync_db/0, sync_query/2]).
 
 %%--------------------------------------------------------------------
 %% @spec start() -> {ok, AggregatorPid} | {error, Reason}
@@ -110,11 +110,11 @@ add_feed(Source) ->
     end.
 
 %%--------------------------------------------------------------------
-%% @spec add_feed(Name, Feed) -> Content | {error, Reason}
-%% @doc Adds query result to aggregator database
+%% @spec sync_query(Name, Feed) -> Content | {error, Reason}
+%% @doc Updates query result to aggregator database
 %% @end 
 %%--------------------------------------------------------------------
-add_feed(Name, Content) ->
+sync_query(Name, Content) ->
     Attrs = pipe,
     {_, Items} = Content,
     Timestamp = read_timestamp(Items),
@@ -172,16 +172,21 @@ read_raw(Url) ->
 parse_feed(Content) ->
     case Content of
         {ok, Data} ->
-            case xmerl_scan:string(Data) of
+            try xmerl_scan:string(Data) of
                 {error, _} ->
-                    throw({fetch, "error parsing fetch source"});
+                    erlang:error("error in parsing feed data");
                 {ParsResult, _} ->
                     %% simple rss validation
                     case length(xmerl_xpath:string("/rss", ParsResult)) of
-                        0 -> throw({fetch, "not an rss feed"});
-                        _ -> true
+                        0 ->
+                            erlang:error("not a rss feed");
+                        _ ->
+                            true
                     end,
                     extract_feed(ParsResult)
+            catch
+                _:E ->
+                    erlang:error(E)
             end;
         E ->
             E

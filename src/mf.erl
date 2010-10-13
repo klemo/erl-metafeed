@@ -5,11 +5,15 @@
 %%% Created : 14 Apr 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(mf).
+
 -behaviour(gen_server).
+
 -export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/3,
          removeq/1, listq/0, prepare_query/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
+
+-include("mf.hrl").
 
 %%%-------------------------------------------------------------------
 %% Metafeed API
@@ -65,24 +69,15 @@ init([]) ->
 %%%-------------------------------------------------------------------
 %% Terminate all metafeed interpreter processes
 %%%-------------------------------------------------------------------
-clean_up(State) ->
-    clean_up(
-      ets:first(State),
-      State),
-    ets:delete(State).
-
-clean_up('$end_of_table', _) ->
-    ok;
-clean_up(Name, State) ->
-    [{_, Pid, _, _}] = ets:lookup(State, Name),
-    Pid ! {stop},
-    clean_up(ets:next(State, Name), State).
-
-%%%-------------------------------------------------------------------
-%% Return list of all registered queries
-%%%-------------------------------------------------------------------
-list_queries(State) ->
-    {ok, ets:tab2list(State)}.
+clean_up() ->
+    case persistence:get_metafeed_list() of
+        {ok, L} ->        
+            lists:map(fun(X) ->
+                              utils:rpc(X#metafeed.pid, {stop}) end,
+                      L);
+        {error, E} ->
+            {error, E}
+    end.
 
 %%%-------------------------------------------------------------------
 %% Alalyzes query for pipe operations and inserts read query Pid
@@ -112,86 +107,99 @@ prepare_query({Op, Simple}, _) ->
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
     UrlName = re:replace(Name, " ", "-", [global, {return,list}]),
-    Reply = case ets:lookup(State, UrlName) of
+    Reply = case persistence:get_metafeed(UrlName) of
+        {atomic, Resp} ->
+            case Resp of
                 [] ->
                     %% spawn new process for query
                     Pid = spawn(fun() ->
-                                        interpreter:main({UrlName, Query}) end),
+                      interpreter:main({UrlName, Query}) end),
                     %% initial query run
                     Pid ! {self(), run},
-                    %% insert query info in ets table
-                    ets:insert(State,
-                               {UrlName, Pid, Description, Query}),
+                    persistence:add_metafeed({UrlName, Description, Query, Pid}),
                     {ok, add, UrlName};
-                [_] ->
+                %% found metafeed in database
+                [#metafeed{name=UrlName}] ->
                     {error, "Query with that name already exists!"}
-            end,
+            end
+    end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Starts execution of query by sending message to matching process.
 %%%-------------------------------------------------------------------
 handle_call({run_query, Name}, _From, State) ->
-    Reply = case ets:lookup(State, Name) of
-               [] ->
+    Reply = case persistence:get_metafeed(Name) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
                     {error, "no such query"};
-               [{Name, Pid, _, _}] ->
+                [#metafeed{pid=Pid}] ->
                     Pid ! {self(), run},
                     {ok, run, Name}
-            end,
+            end
+    end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Fetch query results
 %%%-------------------------------------------------------------------
 handle_call({read_query, Name, Format}, _From, State) ->
-    Reply = case ets:lookup(State, Name) of
-               [] ->
+    Reply = case persistence:get_metafeed(Name) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
                     {error, "no such query"};
-               [{Name, Pid, _, _}] ->
+                [#metafeed{pid=Pid}] ->
                     utils:rpc(Pid, {read, Format})
-            end,
+            end
+    end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Updates query text.
 %%%-------------------------------------------------------------------
 handle_call({update_query, Name, Description, Query}, _From, State) ->
-    Reply = case ets:lookup(State, Name) of
-               [] ->
+    Reply = case persistence:get_metafeed(Name) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
                     {error, "no such query"};
-               [{_, Pid, _, _}] ->
-                    ets:insert(State, {Name, Pid, Description, Query}),
-                    utils:rpc(Pid, {update, Query})
-            end,
+                [#metafeed{pid=Pid}] ->
+                    utils:rpc(Pid, {update, Query}),
+                    persistence:add_metafeed({Name, Description, Query, Pid})
+            end
+    end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Removes query from metafeed system.
 %%%-------------------------------------------------------------------
 handle_call({remove_query, Name}, _From, State) ->
-    Reply = case ets:lookup(State, Name) of
-               [] ->
+    Reply = case persistence:get_metafeed(Name) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
                     {error, "no such query"};
-               [{Name, Pid, _, _}] ->
+                [#metafeed{pid=Pid}] ->
                     utils:rpc(Pid, {stop}),
-                    ets:delete(State, Pid),
-                    {ok}
-            end,
+                    persistence:delete_metafeed(Name)
+            end
+    end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Lists all registered queries.
 %%%-------------------------------------------------------------------
 handle_call({list_queries}, _From, State) ->
-    Reply = list_queries(State),
+    Reply = persistence:get_metafeed_list(),
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
 %% Terminates metafeed.
 %%%-------------------------------------------------------------------
 handle_call(stop, _From, State) ->
-    clean_up(State),
+    clean_up(),
     {stop, normal, stopped, State}.
 
 %%%-------------------------------------------------------------------

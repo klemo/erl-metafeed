@@ -9,4 +9,11 @@
           attributes, %% push|pull
           timestamp, %% most recent item time
           content %% feed items
-         }). 
+         }).
+
+-record(metafeed, {
+          name,
+          description,
+          source,
+          pid %% pid of query process
+         }).
