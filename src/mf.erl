@@ -89,6 +89,7 @@ clean_up() ->
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
     %% todo: make real random unique id
+    utils:random_seed(),
     Id = integer_to_list(random:uniform(1000)),
     %% spawn new process for query
     Pid = spawn(

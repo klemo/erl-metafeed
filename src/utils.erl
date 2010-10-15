@@ -8,7 +8,8 @@
 
 -include_lib("xmerl/include/xmerl.hrl").
 -export([log/2, rpc/2, get_titles/1, generate_feed/2,
-         gen_rss/1, gen_json/2, get_element/2, read_file/1]).
+         gen_rss/1, gen_json/2, get_element/2, read_file/1,
+        random_seed/0]).
 
 -ifdef(debug).
 -define(LOG(Msg, Args), io:format(Msg, Args)).
@@ -181,3 +182,12 @@ read_lines(Device, Accum) ->
         eof  -> file:close(Device), Accum;
         Line -> read_lines(Device, Accum ++ Line)
     end.
+
+%% seed random number generator
+random_seed() ->
+    {_,_,X} = erlang:now(),
+    {H,M,S} = time(),
+    H1 = H * X rem 32767,
+    M1 = M * X rem 32767,
+    S1 = S * X rem 32767,
+    put(random_seed, {H1,M1,S1}).

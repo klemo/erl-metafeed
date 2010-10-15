@@ -64,13 +64,7 @@ spawn_queries() ->
                                 interpreter:main({X#metafeed.id, X#metafeed.source}) end),
                               %% initial query run
                               Pid ! {self(), run},
-                              add_metafeed({X#metafeed.id,
-                                            X#metafeed.name,
-                                            X#metafeed.description,
-                                            X#metafeed.source,
-                                            Pid,
-                                            X#metafeed.pipes
-                                           }),
+                              add_metafeed(X#metafeed{pid=Pid}),
                               io:format("~p~n",
                                         [X#metafeed.name])
                       end,
