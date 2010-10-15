@@ -58,36 +58,9 @@ sync_db() ->
 
 %% sync local and remote feeds
 sync_feed(Feed) ->
-    %% db timestamp
-    Timestamp = Feed#feed.timestamp,
     %% get remote feed
     {RemoteContent, RemoteTimestamp} = read_raw(Feed#feed.source),
-    %% if timestamps not synced
-    case RemoteTimestamp > Timestamp of
-        true ->
-            % extract just items from feeds
-            {_, Items} = Feed#feed.content,
-            {Meta, RemoteItems} = RemoteContent,
-            %% take remote items that are not in db
-            RemoteCut = lists:filter(
-                          fun(X) ->
-                                  read_timestamp([X]) > Timestamp end,
-                          RemoteItems),
-            %% append items in db with remote items
-            NewItems = lists:append(RemoteCut, Items),
-            %% update record in db
-            NewFeed = Feed#feed{timestamp=RemoteTimestamp,
-                                content={Meta, NewItems}},
-            T = fun() -> mnesia:write(NewFeed) end,
-            case mnesia:transaction(T) of
-                {atomic, ok} ->
-                    {ok, update_complete, Feed#feed.source};
-                E ->
-                    {error, E}
-            end;
-        false ->
-            {ok, already_up_to_date, Feed#feed.source}
-    end.
+    add_new_items(Feed, RemoteContent, RemoteTimestamp).
 
 %%--------------------------------------------------------------------
 %% @spec add_feed(Source) -> Content | {error, Reason}
@@ -100,7 +73,10 @@ add_feed(Source) ->
     %% read remote feed
     {Content, Timestamp} = read_raw(Source),
     %% save feed record to db
-    Feed = #feed{source=Source, attributes=Attrs, timestamp=Timestamp, content=Content},
+    Feed = #feed{source=Source,
+                 attributes=Attrs,
+                 timestamp=Timestamp,
+                 content=Content},
     T = fun() -> mnesia:write(Feed) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
@@ -115,18 +91,60 @@ add_feed(Source) ->
 %% @end 
 %%--------------------------------------------------------------------
 sync_query(Id, Content) ->
-    Attrs = pipe,
     {_, Items} = Content,
     Timestamp = read_timestamp(Items),
-    %% save feed record to db
-    Feed = #feed{source=Id, attributes=Attrs,
-                 timestamp=Timestamp, content=Content},
-    T = fun() -> mnesia:write(Feed) end,
+    %% check if query result is already in db
+    T = fun() -> mnesia:read({feed, Id}) end,
     case mnesia:transaction(T) of
-        {atomic, ok} ->
-            {ok, Id};
-        E ->
-            {error, E}
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
+                    NewFeed = #feed{source=Id,
+                                    content=Content,
+                                    timestamp=Timestamp,
+                                    attributes=pipe
+                                   },
+                    T1 = fun() -> mnesia:write(NewFeed) end,
+                    case mnesia:transaction(T1) of
+                        {atomic, ok} ->
+                            {ok, update_complete, Id};
+                        E ->
+                            {error, E}
+                    end;
+                [F] ->
+                    add_new_items(F, Content, Timestamp)
+            end
+    end.
+
+add_new_items(Feed, RemoteContent, RemoteTimestamp) ->
+    %% db timestamp
+    Timestamp = Feed#feed.timestamp,
+
+    case RemoteTimestamp > Timestamp of
+        true ->
+            % extract just items from feeds
+            {_, Items} = Feed#feed.content,
+            {Meta, RemoteItems} = RemoteContent,
+            %% take remote items that are not in db
+            RemoteCut = lists:filter(
+                          fun(X) ->
+                                  read_timestamp([X]) > Timestamp end,
+                          RemoteItems),
+            %% append items in db with remote items
+            NewItems = lists:append(RemoteCut, Items),
+            %% update record in db
+            NewFeed = Feed#feed{timestamp=RemoteTimestamp,
+                                content={Meta, NewItems}
+                               },
+            T = fun() -> mnesia:write(NewFeed) end,
+            case mnesia:transaction(T) of
+                {atomic, ok} ->
+                    {ok, update_complete, Feed#feed.source};
+                E ->
+                    {error, E}
+            end;
+        false ->
+            {ok, already_up_to_date, Feed#feed.source}
     end.
 
 %%--------------------------------------------------------------------

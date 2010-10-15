@@ -6,7 +6,7 @@
 
 -record(feed, {
           source, %% feed source (url, query name, local file)
-          attributes, %% push|pull
+          attributes, %% push|pull|pipe
           timestamp, %% most recent item time
           content %% feed items
          }).
@@ -16,5 +16,6 @@
           name,
           description,
           source,
-          pid %% pid of query process
+          pid, %% pid of query process,
+          pipes %% list of metafeeds that depend on this metafeed
          }).
