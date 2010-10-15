@@ -11,7 +11,7 @@
 -include("mf.hrl").
 
 -export([start/0, add_metafeed/1, get_metafeed/1,
-         del_metafeed/1, get_metafeed_list/0,
+         del_metafeed/1, get_metafeed_list/0, get_metafeed_pid/1,
          insert_depencencies/2]).
 
 %%--------------------------------------------------------------------
@@ -68,7 +68,8 @@ spawn_queries() ->
                                             X#metafeed.name,
                                             X#metafeed.description,
                                             X#metafeed.source,
-                                            Pid
+                                            Pid,
+                                            X#metafeed.pipes
                                            }),
                               io:format("~p~n",
                                         [X#metafeed.name])
@@ -87,6 +88,20 @@ get_metafeed(Id) ->
     T = fun() -> mnesia:read({metafeed, Id}) end,
     mnesia:transaction(T).
 
+get_metafeed_pid(Id) ->
+    T = fun() -> mnesia:read({metafeed, Id}) end,
+    case mnesia:transaction(T) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
+                    {error};
+                [MF] ->     
+                    {ok, MF#metafeed.pid}
+            end;
+        _ ->
+            {error}
+    end.
+
 %%--------------------------------------------------------------------
 %% @spec add_metafeed({}) -> {ok, Id} | {error, Reason}
 %% @doc Add metafeed to db
@@ -101,14 +116,14 @@ add_metafeed(MF) when is_record(MF, metafeed) ->
             {error, E}
     end;
 
-add_metafeed({Id, Name, Description, Source, Pid}) ->
+add_metafeed({Id, Name, Description, Source, Pid, Pipes}) ->
     MF = #metafeed{
       id=Id,
       name=Name,
       description=Description,
       source=Source,
       pid=Pid,
-      pipes=[]
+      pipes=Pipes
      },
     T = fun() -> mnesia:write(MF) end,
     case mnesia:transaction(T) of
@@ -123,7 +138,6 @@ add_metafeed({Id, Name, Description, Source, Pid}) ->
 %% eg. if metafeed M2 fetches metafeed M1 then M1 -> M2
 %%%-------------------------------------------------------------------
 insert_depencencies({fetch, Source}, Id) ->
-    io:format("Entering...~n", []),
     %% check if this query is reading from another query
     case get_metafeed(Source) of
         {atomic, Resp} ->
@@ -131,7 +145,6 @@ insert_depencencies({fetch, Source}, Id) ->
                 [] ->
                     ok;
                 [MF] ->
-                    io:format("FOUND ~p~n", [Source]),
                     %% update pipes element
                     PList = lists:append(MF#metafeed.pipes,
                                          [Id]),
@@ -143,11 +156,9 @@ insert_depencencies({fetch, Source}, Id) ->
     {fetch, Source};
 
 insert_depencencies({Op, {Rest}}, Id) ->
-    io:format("Entering ~p...~n", [Op]),
     {Op, insert_depencencies({Rest}, Id)};
 
 insert_depencencies({Op, Simple}, Id) ->
-    io:format("Entering2 ~p...~n", [Op]),
     {Op, insert_depencencies(Simple, Id)}.
 
 %%--------------------------------------------------------------------

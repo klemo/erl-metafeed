@@ -96,8 +96,7 @@ handle_call({add_query, Name, Description, Query}, _From, State) ->
                     interpreter:main({Id, Query}) end),
     %% initial query run
     Pid ! {self(), run},
-    persistence:add_metafeed({Id, Name, Description, Query, Pid}),
-    io:format("Finding ~p for ~p...~n", [Query, Id]),
+    persistence:add_metafeed({Id, Name, Description, Query, Pid, []}),
     persistence:insert_depencencies(Query, Id),
     Reply = {ok, add, Id},
     {reply, Reply, State};
@@ -144,7 +143,7 @@ handle_call({update_query, Id, {Name, Description, Query}}, _From, State) ->
                     {error, "no such query"};
                 [#metafeed{pid=Pid}] ->
                     utils:rpc(Pid, {update, Query}),
-                    persistence:add_metafeed({Id, Name, Description, Query, Pid})
+                    persistence:add_metafeed({Id, Name, Description, Query, Pid, []})
             end
     end,
     {reply, Reply, State};

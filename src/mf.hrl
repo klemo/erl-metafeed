@@ -17,5 +17,5 @@
           description,
           source,
           pid, %% pid of query process,
-          pipes %% list of metafeeds that depend on this metafeed
+          pipes=[] %% list of metafeeds that depend on this metafeed
          }).

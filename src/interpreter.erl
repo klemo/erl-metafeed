@@ -5,7 +5,10 @@
 %%% Created : 14 Apr 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(interpreter).
+
 -export([main/1]).
+
+-include("mf.hrl").
 
 %%%-------------------------------------------------------------------
 %% Main interpreter process loop
@@ -44,11 +47,13 @@ main(Query, State) ->
 
 %% parse and execute query, catch all errors
 execute_query(Query, From, push, State) ->
+    io:format("Running query ~p~n", [State]),
     try do(Query) of
         Result ->
             From ! {ok, Result},
             {id, Id} = State,
-            aggregator:sync_query(Id, Result)
+            aggregator:sync_query(Id, Result),
+            push_list(Id)
     catch
         _:_ ->
             From ! {error, "Error in query!"}
@@ -62,6 +67,31 @@ execute_query(Query, From, output, Format) ->
         error:E ->
             From ! {error, E}
     end.
+
+%% run all metafeeds that depend on metafeed Id
+push_list(Id) ->
+    %% get dependent metafeeds from db
+    RunList = case persistence:get_metafeed(Id) of
+                  {atomic, Resp} ->
+                      case Resp of
+                          [] ->
+                              [];
+                          [MF] ->     
+                              MF#metafeed.pipes
+                      end;
+                  _ ->
+                      []
+              end,
+    %% run each metafeed
+    lists:map(fun(X) ->
+                      case persistence:get_metafeed_pid(X) of
+                          {ok, Pid} ->
+                              Pid ! {self(), run};
+                          {error} ->
+                              error
+                      end
+              end,
+              RunList).
 
 %%%-------------------------------------------------------------------
 %% query language interpreter
