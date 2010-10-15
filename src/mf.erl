@@ -9,7 +9,7 @@
 -behaviour(gen_server).
 
 -export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/2,
-         removeq/1, listq/0, prepare_query/2]).
+         removeq/1, listq/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -80,24 +80,6 @@ clean_up() ->
     end.
 
 %%%-------------------------------------------------------------------
-%% Alalyzes query for pipe operations and inserts read query Pid
-%% instead of query Name
-%%%-------------------------------------------------------------------
-prepare_query({fetch, pipe, Source}, State) ->
-    case ets:lookup(State, Source) of
-        [] ->
-            {fetch, pipe, {error, "no such query"}};
-        [{_, Pid, _, _}] ->
-            {fetch, pipe, Pid}
-    end;
-
-prepare_query({Op, {Rest}}, State) -> 
-    {Op, prepare_query({Rest}, State)};
-
-prepare_query({Op, Simple}, _) ->
-    {Op, Simple}.
-
-%%%-------------------------------------------------------------------
 %% Metafeed gen_server handle calls
 %%%-------------------------------------------------------------------
 
@@ -106,7 +88,7 @@ prepare_query({Op, Simple}, _) ->
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query}, _From, State) ->
-    %% todo: make real random generator
+    %% todo: make real random unique id
     Id = integer_to_list(random:uniform(1000)),
     %% spawn new process for query
     Pid = spawn(
@@ -115,6 +97,8 @@ handle_call({add_query, Name, Description, Query}, _From, State) ->
     %% initial query run
     Pid ! {self(), run},
     persistence:add_metafeed({Id, Name, Description, Query, Pid}),
+    io:format("Finding ~p for ~p...~n", [Query, Id]),
+    persistence:insert_depencencies(Query, Id),
     Reply = {ok, add, Id},
     {reply, Reply, State};
 

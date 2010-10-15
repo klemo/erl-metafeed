@@ -11,7 +11,8 @@
 -include("mf.hrl").
 
 -export([start/0, add_metafeed/1, get_metafeed/1,
-         del_metafeed/1, get_metafeed_list/0]).
+         del_metafeed/1, get_metafeed_list/0,
+         insert_depencencies/2]).
 
 %%--------------------------------------------------------------------
 %% @spec start() -> {ok} | {error, Reason}
@@ -91,13 +92,24 @@ get_metafeed(Id) ->
 %% @doc Add metafeed to db
 %% @end 
 %%--------------------------------------------------------------------
+add_metafeed(MF) when is_record(MF, metafeed) ->
+    T = fun() -> mnesia:write(MF) end,
+    case mnesia:transaction(T) of
+        {atomic, ok} ->
+            {ok, MF#metafeed.id};
+        E ->
+            {error, E}
+    end;
+
 add_metafeed({Id, Name, Description, Source, Pid}) ->
     MF = #metafeed{
       id=Id,
       name=Name,
       description=Description,
       source=Source,
-      pid=Pid},
+      pid=Pid,
+      pipes=[]
+     },
     T = fun() -> mnesia:write(MF) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
@@ -105,6 +117,38 @@ add_metafeed({Id, Name, Description, Source, Pid}) ->
         E ->
             {error, E}
     end.
+
+%%%-------------------------------------------------------------------
+%% Alalyzes query for pipe operations and inserts dependencies
+%% eg. if metafeed M2 fetches metafeed M1 then M1 -> M2
+%%%-------------------------------------------------------------------
+insert_depencencies({fetch, Source}, Id) ->
+    io:format("Entering...~n", []),
+    %% check if this query is reading from another query
+    case get_metafeed(Source) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
+                    ok;
+                [MF] ->
+                    io:format("FOUND ~p~n", [Source]),
+                    %% update pipes element
+                    PList = lists:append(MF#metafeed.pipes,
+                                         [Id]),
+                    add_metafeed(MF#metafeed{pipes=PList})
+            end;
+        _ ->
+            false
+    end,
+    {fetch, Source};
+
+insert_depencencies({Op, {Rest}}, Id) ->
+    io:format("Entering ~p...~n", [Op]),
+    {Op, insert_depencencies({Rest}, Id)};
+
+insert_depencencies({Op, Simple}, Id) ->
+    io:format("Entering2 ~p...~n", [Op]),
+    {Op, insert_depencencies(Simple, Id)}.
 
 %%--------------------------------------------------------------------
 %% @spec del_metafeed(Id) -> {ok, Id} | {error, Reason}
