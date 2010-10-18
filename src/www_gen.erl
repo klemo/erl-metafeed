@@ -48,21 +48,28 @@ add_query(A) ->
             {ok, ValSpec} = yaws_api:postvar(A, "query-spec"),
             %% convert query-spec string to erlang terms
             {ok, VTokens, _} = erl_scan:string(ValSpec ++ "."),
-            {ok, VTerm} = erl_parse:parse_term(VTokens),
-            %% call metafeed api for adding query
-            Res = mf:addq(ValName,
-                          ValDesc,
-                          VTerm),
-            case Res of
-                {ok, add, Id} ->
-                    [{p, [], "Query registered!"},
-                     {a, [{href,
-                           "/feed/" ++ Id}], "Grab feed here"},
-                     {br},
-                     {a, [{href,
-                           "/"}], "Return to main page"}];
+            case erl_parse:parse_term(VTokens) of
+                {ok, VTerm} ->
+                    %% call metafeed api for adding query
+                    Res = mf:addq(ValName,
+                                  ValDesc,
+                                  VTerm),
+                    case Res of
+                        {ok, add, Id} ->
+                            [{p, [], "Query registered!"},
+                             {a, [{href,
+                                   "/feed/" ++ Id}], "Grab feed here"},
+                             {br},
+                             {a, [{href,
+                                   "/"}], "Return to main page"}];
+                        {error, E} ->
+                            render_error(E)
+                    end;
                 {error, E} ->
-                    {p, [], [{p, [], E},
-                             {a, [{href, "/"}], "Return to main page"}]}
+                    render_error("Syntax error in query!")
             end
     end.
+
+render_error(E) ->
+    {p, [], [{p, [], E},
+             {a, [{href, "/"}], "Return to main page"}]}.
