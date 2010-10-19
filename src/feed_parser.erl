@@ -26,17 +26,7 @@ fetch({url, Url}) ->
     aggregator:read(Url);
 
 fetch({file, FileName}) ->
-    aggregator:read_file(FileName);
-
-fetch({pipe, Pid}) ->
-    Status = utils:rpc(Pid, {run}),
-    case Status of
-        {ok, Result} -> Result;
-        {error, _} -> {error, Pid}
-    end;
-
-fetch(Url) ->
-    aggregator:read(Url).
+    aggregator:read_file(FileName).
 
 %%%--------------------------------------------------------------------------
 %% Filter feed items that contain Text in Elements

@@ -38,8 +38,8 @@ feed(A) ->
     case Res of
         {ok, Content} ->
             {content, MimeType, Content};
-        {error, E} ->
-            {html, io_lib:format("error: ~s", [E])}
+        {error, _} ->
+            {html, io_lib:format("error: unable to read this feed!", [])}
     end.
 
 change_query(Name) ->

@@ -100,12 +100,6 @@ push_list(Id) ->
 do({fetch, Source}) ->
     feed_parser:fetch({url, Source});
 
-do({fetch, url, Source}) ->
-    feed_parser:fetch({url, Source});
-
-do({fetch, pipe, Source}) ->
-    feed_parser:fetch({pipe, Source});
-
 do({filter, {contains, String, Elements, L}}) ->
     feed_parser:filter({contains, String, Elements},
                         do(L));
