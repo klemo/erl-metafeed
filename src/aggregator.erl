@@ -163,7 +163,10 @@ read(Source) ->
                     add_feed(Source);
                 %% found feed in database
                 [#feed{source=Source, content=Content}] ->
-                    Content
+                    {Meta, Items} = Content,
+                    %% reduce feed output to 20 items
+                    ReducedItems = lists:sublist(Items, 20),
+                    {Meta, ReducedItems}
             end
     end.
 
