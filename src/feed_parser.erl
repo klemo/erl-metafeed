@@ -22,11 +22,8 @@
 %% Fetch feed from various sources
 %%%--------------------------------------------------------------------------
 
-fetch({url, Url}) ->
-    aggregator:read(Url);
-
-fetch({file, FileName}) ->
-    aggregator:read_file(FileName).
+fetch(Source) ->
+    aggregator:read(Source).
 
 %%%--------------------------------------------------------------------------
 %% Filter feed items that contain Text in Elements

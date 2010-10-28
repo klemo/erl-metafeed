@@ -149,11 +149,14 @@ insert_depencencies({fetch, Source}, Id) ->
     end,
     {fetch, Source};
 
-insert_depencencies({Op, {Rest}}, Id) ->
-    {Op, insert_depencencies({Rest}, Id)};
+insert_depencencies({Op, Params, {Items1, Items2}}, Id) when not is_atom(Items1) ->
+    {Op, Params, {
+           insert_depencencies(Items1, Id),
+           insert_depencencies(Items2, Id)
+          }};
 
-insert_depencencies({Op, Simple}, Id) ->
-    {Op, insert_depencencies(Simple, Id)}.
+insert_depencencies({Op, Params, Items}, Id) ->
+    {Op, Params, insert_depencencies(Items, Id)}.
 
 %%--------------------------------------------------------------------
 %% @spec del_metafeed(Id) -> {ok, Id} | {error, Reason}

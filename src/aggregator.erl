@@ -34,8 +34,8 @@ loop() ->
         {From, {stop}} ->
             From ! {ok, self()},
             {ok}
-    %% sync aggregator db every 10 sec
-    after 10000 ->
+    %% sync aggregator db every 600 sec
+    after 600000 ->
             sync_db(),
             loop()
     end.
