@@ -24,9 +24,9 @@ query_list() ->
                            {td, [],
                             {span, [{class, "desc"}], X#metafeed.description}},
                           {td, [],
-                            [{a, [{href, "/feed/change/" ++ X#metafeed.name},
+                            [{a, [{href, "/feed/view-source/" ++ X#metafeed.name},
                                   {class, "sublink"}],
-                             "Change query"}]}
+                             "View source"}]}
                            ]}
                  end,
                  L),

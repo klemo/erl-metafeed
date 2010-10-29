@@ -28,7 +28,7 @@ main(Query, State) ->
             main(NewQuery, State);
         %% generate rss feed
         {From, {read, Format}} ->
-            execute_query(Query, From, output, Format),
+            execute_query(Query, From, output, Format, State),
             main(Query, State);
         %% dispach on lambda
         {From, {call, F}} ->
@@ -56,12 +56,13 @@ execute_query(Query, From, push, State) ->
     catch
         _:E ->
             From ! {error, "Error in query!"}
-    end;
+    end.
 
-execute_query(Query, From, output, Format) ->
+execute_query(Query, From, output, Format, State) ->
     try do(Query) of
         Result ->
-            From ! {ok, utils:generate_feed(Result, Format)}
+            {id, Id} = State,
+            From ! {ok, utils:generate_feed(Result, Format, Id)}
     catch
         error:E ->
             From ! {error, E}

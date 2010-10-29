@@ -7,9 +7,13 @@
 -module(utils).
 
 -include_lib("xmerl/include/xmerl.hrl").
--export([log/2, rpc/2, get_titles/1, generate_feed/2,
-         gen_rss/1, gen_json/2, get_element/2, read_file/1,
-        random_seed/0]).
+
+-include("mf.hrl").
+
+-export([log/2, rpc/2, get_titles/1, generate_feed/3,
+         gen_rss/2, gen_json/2, get_element/2, read_file/1,
+         random_seed/0]).
+
 
 -ifdef(debug).
 -define(LOG(Msg, Args), io:format(Msg, Args)).
@@ -52,18 +56,18 @@ get_titles([Item|Rest], Titles) ->
 %%%-------------------------------------------------------------------
 %% Dispaches Feed generation based on feed Format
 %%%-------------------------------------------------------------------
-generate_feed(Feed, rss) ->
-    gen_rss(Feed);
+generate_feed(Feed, rss, Id) ->
+    gen_rss(Feed, Id);
 
-generate_feed(Feed, {json, JSONP}) ->
+generate_feed(Feed, {json, JSONP}, _) ->
     gen_json(Feed, JSONP).
 
 %%%-------------------------------------------------------------------
 %% Generates rss xml document from parsed feed
 %% {RSS element Attrs} = Meta
 %%%-------------------------------------------------------------------
-gen_rss({Meta, Items}) ->
-    RSSElement = wrap_rss(Meta),
+gen_rss({Meta, Items}, Id) ->
+    RSSElement = wrap_rss(Meta, Id),
     RSSText = lists:flatten(
                 xmerl:export_content(Items, xmerl_xml)
                ),
@@ -71,7 +75,7 @@ gen_rss({Meta, Items}) ->
                   [RSSElement,
                    binary_to_list(unicode:characters_to_binary(RSSText))]).
 
-wrap_rss(Meta) ->
+wrap_rss(Meta, Id) ->
     %% remove duplicates from rss element attributes
     UMeta = lists:ukeysort(2, Meta),
     %% generate rss element attributes xml
@@ -79,15 +83,31 @@ wrap_rss(Meta) ->
              fun(X) ->
                     atom_to_list(X#xmlAttribute.name) ++ "=\"" ++ X#xmlAttribute.value ++ "\" " end,
              UMeta),
-    ChannelElement = gen_rss_channel(),
+    ChannelElement = gen_rss_channel(Id),
     io_lib:format("<rss ~ts>~n~ts", [lists:flatten(Attrs), ChannelElement]).
 
 %% generates rss channel element xml representation
-gen_rss_channel() ->
-    "<channel>\n"
-    "<title>erl-metafeed test</title>\n"
-    "<link>http://gitorious.com/erl-metafeed</link>\n"
-    "<description>erl-metafeed test feed</description>\n".
+gen_rss_channel(Id) ->
+    % TODO: this should be propagated from do(Query)
+    case persistence:get_metafeed(Id) of
+        {atomic, Resp} ->
+            case Resp of
+                [] ->
+                    Title = "erl-metafeed",
+                    Link = "http://gitorious.org/erl-metafeed",
+                    Desc = "erl-metafeed feed";
+                [#metafeed{name=Name, description=Desc}] ->
+                    Title = Name,
+                    Link = "/feed/" ++ Id,
+                    Desc = Desc
+            end
+    end,
+    io_lib:format(
+      "<channel>\n"
+      "<title>~ts</title>\n"
+      "<link>~ts</link>\n"
+      "<description>~ts</description>\n",
+      [Title, Link, Desc]).
 
 %%-------------------------------------------------------------------------
 %% @doc
