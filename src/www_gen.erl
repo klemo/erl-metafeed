@@ -5,7 +5,7 @@
 %%% Created : 11 Sep 2010 by klemo <klemo.vladimir@gmail.com>
 %%%-------------------------------------------------------------------
 -module(www_gen).
--export([query_list/0, add_query/1]).
+-export([query_list/0, add_query/1, render_error/1]).
 
 -include_lib("yaws/include/yaws_api.hrl").
 

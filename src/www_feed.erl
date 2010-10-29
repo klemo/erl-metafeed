@@ -39,7 +39,7 @@ feed(A) ->
         {ok, Content} ->
             {content, MimeType, Content};
         {error, _} ->
-            {html, io_lib:format("error: unable to read this feed!", [])}
+            {ehtml, www_gen:render_error("Unable to read this feed!")}
     end.
 
 change_query(Name) ->
