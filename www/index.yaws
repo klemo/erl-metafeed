@@ -21,7 +21,7 @@
     
     <div class="content">
       <div class="add-query">
-        <a href="#" class="add-query-link">Add new query</a>
+        <a href="#" class="add-query-link">Add new metafeed</a>
         <form method="post" action="/add-query.yaws" id="id_form_add_query">
           <table>
             <tbody>
@@ -43,13 +43,15 @@
               </tr>
               <tr>
                 <td colspan="2">
-                  <label for="query-spec">Query specification:</label>
+                  <label for="query-spec">Query:</label>
                   <br/>
                   <textarea name="query-spec" rows="10" cols="50"></textarea>
                   <br/>
                   <p>Example queries:</p>
-                  <p class="code-example">{tail, {5, {union, {{fetch, "url1"}, {fetch, "url2"}}}}}<br/>
-                  {filter, {contains, "some text", ["title"], {fetch, "url"}}}</p>
+                  <p class="code-example">{tail, {5}, {union, {}, {{fetch, "url1"}, {fetch, "url2"}}}}<br/>
+                  {filter, {contains, "some text", ["title"]}, {fetch, "url"}}<br/>
+                  {sort, {ascending, "title"}, {fetch, "metafeed_id"}}<br/>
+                  {unique, {}, {fetch, "url"}}</p>
                 </td>
               </tr>
               <tr>
@@ -64,7 +66,7 @@
       
       <div class="recent-queries">
         <p>
-          <span class="subtitle">recent queries</span>
+          <span class="subtitle">recent metafeeds</span>
         </p>  
         <erl>
           out(Arg) ->
