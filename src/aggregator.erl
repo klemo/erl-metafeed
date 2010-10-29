@@ -231,6 +231,9 @@ read_meta(Feed) ->
     RSSE#xmlElement.attributes.
 
 % get time of most recent feed item
+read_timestamp([]) ->
+    -1;
+
 read_timestamp([Item|_]) ->
     XPathExpr = "//pubDate/text()",
     [Node|_] = xmerl_xpath:string(XPathExpr, Item),
