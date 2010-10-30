@@ -1,9 +1,25 @@
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 %%% File    : aggregator.erl
 %%% Author  : klemo <klemo.vladimir@gmail.com>
 %%% Description : Feed fetcher and aggregator
 %%% Created :  6 Sep 2010 by klemo <klemo.vladimir@gmail.com>
-%%%-------------------------------------------------------------------
+
+%%% erl-metafeed, Copyright (C) 2010 Klemo Vladimir
+
+%%% This program is free software: you can redistribute it and/or modify
+%%% it under the terms of the GNU Affero General Public License as published
+%%% by the Free Software Foundation, either version 3 of the License, or
+%%% (at your option) any later version.
+
+%%% This program is distributed in the hope that it will be useful,
+%%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%%% GNU Affero General Public License for more details.
+
+%%% You should have received a copy of the GNU Affero General Public License
+%%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%%%-----------------------------------------------------------------------------
 -module(aggregator).
 
 -include_lib("stdlib/include/qlc.hrl" ).
@@ -13,21 +29,21 @@
 
 -export([start/0, read/1, sync_db/0, sync_query/2]).
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec start() -> {ok, AggregatorPid} | {error, Reason}
 %% @doc Starts feed aggregator with database
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 start() ->
     %% spawn main aggregator loop
     Pid = spawn(fun() -> loop() end),
     {ok, Pid}.
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec loop()
 %% @doc Aggregator loop
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 
 loop() ->
     receive
@@ -40,11 +56,11 @@ loop() ->
             loop()
     end.
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec sync_db()
 %% @doc Updates non-push feeds in database
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 sync_db() ->
     %% get list of pull feeds
     Q = qlc:q([X || X <- mnesia:table(feed),
@@ -62,11 +78,11 @@ sync_feed(Feed) ->
     {RemoteContent, RemoteTimestamp} = read_raw(Feed#feed.source),
     add_new_items(Feed, RemoteContent, RemoteTimestamp).
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec add_feed(Source) -> Content | {error, Reason}
 %% @doc Adds feed to aggregator database
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 add_feed(Source) ->
     %% TODO: parse feed for push spec
     Attrs = pull,
@@ -85,11 +101,11 @@ add_feed(Source) ->
             {error, E}
     end.
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec sync_query(Id, Feed) -> Content | {error, Reason}
 %% @doc Updates query result to aggregator database
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 sync_query(Id, Content) ->
     {_, Items} = Content,
     Timestamp = read_timestamp(Items),
@@ -147,11 +163,11 @@ add_new_items(Feed, RemoteContent, RemoteTimestamp) ->
             {ok, already_up_to_date, Feed#feed.source}
     end.
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec read(Url) -> Content | {error, Reason}
 %% @doc Reads feed from aggregator
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 read(Source) ->
     %% check feeds db
     T = fun() -> mnesia:read({feed, Source}) end,
@@ -170,11 +186,11 @@ read(Source) ->
             end
     end.
 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 %% @spec read_raw(Url) -> Content | {error, Reason}
 %% @doc Reads RSS feed from given Url
 %% @end 
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 read_raw(Url) ->
     case ibrowse:send_req(Url, [], get) of
         {ok, "200", _, Body} ->
@@ -187,9 +203,9 @@ read_raw(Url) ->
     end,
     parse_feed(Content).
 
-%%%--------------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 %% xml feed parsing
-%%%--------------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 parse_feed(Content) ->
     case Content of
         {ok, Data} ->
