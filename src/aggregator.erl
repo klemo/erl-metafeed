@@ -155,7 +155,7 @@ add_new_items(Feed, RemoteContent, RemoteTimestamp) ->
             {_, Items} = Feed#feed.content,
             {Meta, RemoteItems} = RemoteContent,
             %% take remote items that are not in db
-            RemoteCut = lists:filter(
+            RemoteCut = lists:takewhile(
                           fun(X) ->
                                   case read_timestamp([X]) of
                                       {ok, RT} ->
@@ -168,9 +168,10 @@ add_new_items(Feed, RemoteContent, RemoteTimestamp) ->
             %% append items in db with remote items
             NewItems = lists:append(RemoteCut, Items),
             %% update record in db
-            NewFeed = Feed#feed{timestamp=RemoteTimestamp,
-                                content={Meta, NewItems}
-                               },
+            NewFeed = Feed#feed{
+                        timestamp=RemoteTimestamp,
+                        content={Meta, NewItems}
+                       },
             T = fun() -> mnesia:write(NewFeed) end,
             case mnesia:transaction(T) of
                 {atomic, ok} ->
@@ -211,16 +212,31 @@ read(Source) ->
 %% @end 
 %%------------------------------------------------------------------------------
 read_raw(Url) ->
-    case ibrowse:send_req(Url, [], get) of
-        {ok, "200", _, Body} ->
-            Content = {ok, Body};
-        %% try reading local file (for testing)
-        {error, {url_parsing_failed, _}} ->
-            Content = {ok, utils:read_file(Url)};
-        {_, Status, _, _} ->
-            Content = {error, Status}
-    end,
-    parse_feed(Content).
+    case http:request(get, {Url, []}, [{autoredirect, false}], []) of
+        {ok, {{_, Code, _}, _, Body}}->
+            case Code of
+                200 ->
+                    parse_feed({ok, Body});
+                _ ->
+                    {error, io:format("HTTP ~p", [Code])}
+            end;
+        {error, nxdomain} ->
+            parse_feed({ok, utils:read_file(Url)});
+        {error, no_scheme} ->
+            parse_feed({ok, utils:read_file(Url)});
+        {error, E} ->
+            {error, E}
+    end.
+
+    %% case ibrowse:send_req(Url, [], get) of
+    %%     {ok, "200", _, Body} ->
+    %%         Content = {ok, Body};
+    %%     %% try reading local file (for testing)
+    %%     {error, {url_parsing_failed, _}} ->
+    %%         Content = {ok, utils:read_file(Url)};
+    %%     {_, Status, _, _} ->
+    %%         Content = {error, Status}
+    %% end,
 
 %%%-----------------------------------------------------------------------------
 %% xml feed parsing

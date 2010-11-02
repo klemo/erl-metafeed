@@ -73,8 +73,8 @@ listq() ->
 %% Initialize metafeed's state
 %%%-------------------------------------------------------------------
 init([]) ->
-    % start ibrowse module
-    ibrowse:start(),
+    % start inets module
+    inets:start(),
     % initialize persistence
     persistence:start(),
     % initialize agregator
