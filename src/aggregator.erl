@@ -36,8 +36,11 @@
 %%------------------------------------------------------------------------------
 start() ->
     %% spawn main aggregator loop
-    Pid = spawn(fun() -> loop() end),
-    {ok, Pid}.
+    register(aggregator,
+             Pid = spawn(fun() -> loop() end)),
+    %% make sure to restart aggregator if it dies
+    utils:on_exit(Pid,
+                  fun(_Why) -> start() end).
 
 %%------------------------------------------------------------------------------
 %% @spec loop()

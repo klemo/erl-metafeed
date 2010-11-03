@@ -28,7 +28,7 @@
 
 -export([log/2, rpc/2, get_titles/1, generate_feed/3,
          gen_rss/2, gen_json/2, get_element/2, read_file/1,
-         random_seed/0]).
+         random_seed/0, on_exit/2]).
 
 
 -ifdef(debug).
@@ -55,6 +55,20 @@ rpc(Pid, Request) ->
         Response ->
             Response
     end.
+
+%%%-------------------------------------------------------------------
+%% Handle process crashing
+%% From book Pragmatic Programming Erlang
+%%%-------------------------------------------------------------------
+on_exit(Pid, Fun) ->
+    spawn(fun() -> 
+		  process_flag(trap_exit, true),
+		  link(Pid),
+		  receive
+		      {'EXIT', Pid, Why} ->
+			  Fun(Why)
+		  end
+	  end).
 
 %%%-------------------------------------------------------------------
 %% Extracts titles from feed Items and returns them as list.
