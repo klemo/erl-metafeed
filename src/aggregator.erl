@@ -29,6 +29,9 @@
 
 -export([start/0, read/1, sync_db/0, sync_query/2]).
 
+-define(DEF_NUM_OF_ITEMS, 20).
+-define(DEF_SYNC_FEEDS, 120*60*1000).
+
 %%------------------------------------------------------------------------------
 %% @spec start() -> {ok, AggregatorPid} | {error, Reason}
 %% @doc Starts feed aggregator with database
@@ -53,8 +56,8 @@ loop() ->
         {From, {stop}} ->
             From ! {ok, self()},
             {ok}
-    %% sync aggregator db periadically
-    after 600000 ->
+    %% sync aggregator db periodically
+    after ?DEF_SYNC_FEEDS ->
             sync_db(),
             loop()
     end.
@@ -72,7 +75,10 @@ sync_db() ->
     {atomic, Val} = mnesia:transaction(F),
     %% sync feeds in db
     lists:map(fun(Feed) ->
-                      sync_feed(Feed) end,
+                      %% sync feed and sleep between syncing
+                      sync_feed(Feed),
+                      timer:sleep(60*1000)
+                      end,
               Val).
 
 %% sync local and remote feeds
@@ -169,7 +175,9 @@ add_new_items(Feed, RemoteContent, RemoteTimestamp) ->
                                   end,
                           RemoteItems),
             %% append items in db with remote items
-            NewItems = lists:append(RemoteCut, Items),
+            NewItems = lists:sublist(
+                         lists:append(RemoteCut, Items),
+                         ?DEF_NUM_OF_ITEMS),
             %% update record in db
             NewFeed = Feed#feed{
                         timestamp=RemoteTimestamp,
@@ -204,7 +212,7 @@ read(Source) ->
                 [#feed{source=Source, content=Content}] ->
                     {Meta, Items} = Content,
                     %% reduce feed output to 20 items
-                    ReducedItems = lists:sublist(Items, 20),
+                    ReducedItems = lists:sublist(Items, ?DEF_NUM_OF_ITEMS),
                     {Meta, ReducedItems}
             end
     end.
