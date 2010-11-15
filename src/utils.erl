@@ -27,8 +27,7 @@
 -include("mf.hrl").
 
 -export([log/2, rpc/2, get_titles/1, generate_feed/3,
-         gen_rss/2, gen_json/2, get_element/2, read_file/1,
-         random_seed/0, on_exit/2]).
+         get_element/2, read_file/1, random_seed/0, on_exit/2]).
 
 
 -ifdef(debug).
@@ -86,26 +85,35 @@ get_titles([Item|Rest], Titles) ->
 %%%-------------------------------------------------------------------
 %% Dispaches Feed generation based on feed Format
 %%%-------------------------------------------------------------------
-generate_feed(Feed, rss, Id) ->
-    gen_rss(Feed, Id);
 
 generate_feed(Feed, {json, JSONP}, _) ->
-    gen_json(Feed, JSONP).
+    gen_json(Feed, JSONP);
+
+generate_feed(Feed, Format, Id) ->
+    gen_xml(Feed, Id, Format).
 
 %%%-------------------------------------------------------------------
 %% Generates rss xml document from parsed feed
 %% {RSS element Attrs} = Meta
 %%%-------------------------------------------------------------------
-gen_rss({Meta, Items}, Id) ->
-    RSSElement = wrap_rss(Meta, Id),
+gen_xml({Meta, Items}, Id, Format) ->
+    %% read feed data from db
+    RSSElement = wrap_rss(Meta, Id, Format),
     RSSText = lists:flatten(
                 xmerl:export_content(Items, xmerl_xml)
                ),
-    io_lib:format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>~n~ts~ts~n</channel>~n</rss>",
+    Wrapper = 
+        case Format of
+            atom ->
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~n~ts~ts~n</feed>";
+            rss ->
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~n~ts~ts~n</channel>~n</rss>"
+        end,
+    io_lib:format(Wrapper,
                   [RSSElement,
                    binary_to_list(unicode:characters_to_binary(RSSText))]).
 
-wrap_rss(Meta, Id) ->
+wrap_rss(Meta, Id, Format) ->
     %% remove duplicates from rss element attributes
     UMeta = lists:ukeysort(2, Meta),
     %% generate rss element attributes xml
@@ -113,11 +121,15 @@ wrap_rss(Meta, Id) ->
              fun(X) ->
                     atom_to_list(X#xmlAttribute.name) ++ "=\"" ++ X#xmlAttribute.value ++ "\" " end,
              UMeta),
-    ChannelElement = gen_rss_channel(Id),
-    io_lib:format("<rss ~ts>~n~ts", [lists:flatten(Attrs), ChannelElement]).
+    ChannelElement = gen_xml_channel(Id, Format),
+    Wrapper = case Format of
+                  atom -> "<feed ~ts>~n~ts";
+                  rss -> "<rss ~ts>~n~ts"
+              end,
+    io_lib:format(Wrapper, [lists:flatten(Attrs), ChannelElement]).
 
 %% generates rss channel element xml representation
-gen_rss_channel(Id) ->
+gen_xml_channel(Id, Format) ->
     % TODO: this should be propagated from do(Query)
     case persistence:get_metafeed(Id) of
         {atomic, Resp} ->
@@ -132,12 +144,17 @@ gen_rss_channel(Id) ->
                     Desc = Desc
             end
     end,
-    io_lib:format(
-      "<channel>\n"
-      "<title>~ts</title>\n"
-      "<link>~ts</link>\n"
-      "<description>~ts</description>\n",
-      [Title, Link, Desc]).
+    case Format of
+        atom ->
+            io_lib:format(
+              "<title>~ts</title>\n", [Title]);
+        rss ->
+            io_lib:format(
+              "<channel>\n"
+              "<title>~ts</title>\n"
+              "<link>~ts</link>\n"
+              "<description>~ts</description>\n", [Title, Link, Desc])
+    end.
 
 %%-------------------------------------------------------------------------
 %% @doc

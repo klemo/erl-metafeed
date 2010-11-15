@@ -27,6 +27,7 @@
 
 -include("mf.hrl").
 
+-compile(export_all).
 -export([start/0, read/1, sync_db/0, sync_query/2]).
 
 -define(DEF_NUM_OF_ITEMS, 20).
@@ -85,7 +86,7 @@ sync_db() ->
 sync_feed(Feed) ->
     %% get remote feed
     case read_raw(Feed#feed.source) of
-        {ok, {RemoteContent, RemoteTimestamp}} ->
+        {ok, {RemoteContent, RemoteTimestamp, _, _}} ->
             add_new_items(Feed, RemoteContent, RemoteTimestamp);
         {error, E} ->
             {error, E}
@@ -97,22 +98,28 @@ sync_feed(Feed) ->
 %% @end 
 %%------------------------------------------------------------------------------
 add_feed(Source) ->
-    %% TODO: parse feed for push spec
-    Attrs = pull,
     %% read remote feed
     case read_raw(Source) of
-        {ok, {Content, Timestamp}} ->
+        {ok, {Content, Timestamp, PushHub, Format}} ->
+            case PushHub of 
+                {ok, _} ->
+                    Attrs = push;
+                {error, _} ->
+                    Attrs = pull
+            end,
             %% save feed record to db
-            Feed = #feed{source=Source,
-                         attributes=Attrs,
-                         timestamp=Timestamp,
-                         content=Content},
+            Feed = #feed{source = Source,
+                         attributes = Attrs,
+                         timestamp = Timestamp,
+                         content = Content,
+                         format = Format
+                        },
             T = fun() -> mnesia:write(Feed) end,
             case mnesia:transaction(T) of
                 {atomic, ok} ->
                     Content;
-                E ->
-                    {error, E}
+                Err ->
+                    {error, Err}
             end;
         {error, E} ->
             {error, E}
@@ -126,7 +133,7 @@ add_feed(Source) ->
 sync_query(Id, Content) ->
     {_, Items} = Content,
     case read_timestamp(Items) of
-        {ok, Timestamp} ->   
+        {ok, Timestamp} ->
             %% check if query result is already in db
             T = fun() -> mnesia:read({feed, Id}) end,
             case mnesia:transaction(T) of
@@ -169,7 +176,7 @@ add_new_items(Feed, RemoteContent, RemoteTimestamp) ->
                                   case read_timestamp([X]) of
                                       {ok, RT} ->
                                           RT > Timestamp;
-                                      {error, E} ->
+                                      {error, _} ->
                                           false
                                   end
                                   end,
@@ -239,16 +246,6 @@ read_raw(Url) ->
             {error, E}
     end.
 
-    %% case ibrowse:send_req(Url, [], get) of
-    %%     {ok, "200", _, Body} ->
-    %%         Content = {ok, Body};
-    %%     %% try reading local file (for testing)
-    %%     {error, {url_parsing_failed, _}} ->
-    %%         Content = {ok, utils:read_file(Url)};
-    %%     {_, Status, _, _} ->
-    %%         Content = {error, Status}
-    %% end,
-
 %%%-----------------------------------------------------------------------------
 %% xml feed parsing
 %%%-----------------------------------------------------------------------------
@@ -260,13 +257,16 @@ parse_feed(Content) ->
                     erlang:error("error in parsing feed data");
                 {ParsResult, _} ->
                     %% simple rss validation
-                    case length(xmerl_xpath:string("/rss", ParsResult)) of
-                        0 ->
-                            erlang:error("not a rss feed");
-                        _ ->
-                            true
+                    Format = 
+                        case length(xmerl_xpath:string("/rss", ParsResult)) of
+                            0 ->
+                                case length(xmerl_xpath:string("/feed", ParsResult)) of
+                                    0 -> erlang:error( "error parsing feed");
+                                    _ -> atom
+                                end;
+                            _ -> rss
                     end,
-                    extract_feed(ParsResult)
+                    extract_feed(ParsResult, Format)
             catch
                 _:E ->
                     {error, erlang:error(E)}
@@ -278,33 +278,83 @@ parse_feed(Content) ->
 %%%--------------------------------------------------------------------------
 %% Returns tuple of feed timestamp and feed Metadata/Items
 %%%--------------------------------------------------------------------------
-extract_feed(Feed) ->
-    Meta = read_meta(Feed),
+extract_feed(Feed, Format) ->
+    Meta = read_meta(Feed, Format),
     %% get list of feed items
-    Items = xmerl_xpath:string("//item", Feed),
+    Items = read_items(Feed, Format),
     Content = {Meta, Items},
-    case read_timestamp(Items) of
+    PushHub = read_push_info(Feed, Format),
+    case read_timestamp(Items, Format) of
         {ok, Timestamp} ->
-            {ok, {Content, Timestamp}};
+            {ok, {Content, Timestamp, PushHub, Format}};
         {error, E} ->
             {error, E}
     end.
 
+%%%--------------------------------------------------------------------------
 % get feed metadata (just root xml namespaces
 % todo: grab feed name, description etc.
-read_meta(Feed) ->
-    [RSSE|_] = xmerl_xpath:string("/rss", Feed),
+%%%--------------------------------------------------------------------------
+read_meta(Feed, Format) ->
+    XPathExpr = 
+        case Format of
+            rss -> "/rss";
+            atom -> "/feed"
+        end,
+    [RSSE|_] = xmerl_xpath:string(XPathExpr, Feed),
     RSSE#xmlElement.attributes.
 
+%%%--------------------------------------------------------------------------
+% get feed items from parsed feed data
+%%%--------------------------------------------------------------------------
+read_items(Feed, Format) ->
+    XPathExpr = 
+        case Format of
+            rss -> "//item";
+            atom -> "//entry"
+        end,
+    xmerl_xpath:string(XPathExpr, Feed).
+
+%%%--------------------------------------------------------------------------
+% check for PSHB push hub
+%%%--------------------------------------------------------------------------
+read_push_info(Feed, Format) ->
+    XPathExpr = 
+        case Format of
+            rss -> "atom:link[@rel='hub']";
+            atom -> "atom[@rel='hub']"
+        end,
+    case xmerl_xpath:string(XPathExpr, Feed) of
+        [Node|_] ->
+            {ok, Node#xmlElement.name};
+        [] ->
+            {error, "no_push"}
+    end.
+
+%%%--------------------------------------------------------------------------
 % get time of most recent feed item
-read_timestamp([]) ->
+%%%--------------------------------------------------------------------------
+read_timestamp([], _) ->
     {ok, -1};
 
-read_timestamp([Item|_]) ->
-    XPathExpr = "//pubDate/text()",
+read_timestamp([Item|_], Format) ->
+    XPathExpr = 
+        case Format of
+            rss -> "//pubDate/text()";
+            atom -> "//published/text()"
+        end,
     case xmerl_xpath:string(XPathExpr, Item) of
         [Node|_] ->
             {ok, httpd_util:convert_request_date(Node#xmlText.value)};
         [] ->
             {error, "error parsing pubDate"}
+    end.
+
+%% format not specified; try atom then rss
+read_timestamp(Items) ->
+    case read_timestamp(Items, atom) of
+        {ok, Val} ->
+            {ok, Val};
+        {error, _} ->
+            read_timestamp(Items, rss)
     end.

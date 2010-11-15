@@ -24,7 +24,8 @@
           source, %% feed source (url, query name, local file)
           attributes, %% push|pull|pipe
           timestamp, %% most recent item time
-          content %% feed items
+          content, %% feed items,
+          format %% rss|atom
          }).
 
 -record(metafeed, {

@@ -172,7 +172,10 @@ insert_depencencies({Op, Params, {Items1, Items2}}, Id) when not is_atom(Items1)
           }};
 
 insert_depencencies({Op, Params, Items}, Id) ->
-    {Op, Params, insert_depencencies(Items, Id)}.
+    {Op, Params, insert_depencencies(Items, Id)};
+
+insert_depencencies({Op, Items}, Id) ->
+    {error, "missing parameters"}.
 
 %%--------------------------------------------------------------------
 %% @spec del_metafeed(Id) -> {ok, Id} | {error, Reason}

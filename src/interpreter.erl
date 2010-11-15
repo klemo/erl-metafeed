@@ -20,6 +20,7 @@
 %%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 %%%-------------------------------------------------------------------
+
 -module(interpreter).
 
 -export([main/1]).
@@ -29,6 +30,7 @@
 %%%-------------------------------------------------------------------
 %% Main interpreter process loop
 %%%-------------------------------------------------------------------
+
 main({Id, Query}) ->
     main(Query, create_init_state(Id)).
 
@@ -61,7 +63,11 @@ main(Query, State) ->
             {ok}
     end.
 
+%%%--------------------------------------------------------------------------
 %% parse and execute query, catch all errors
+%%%--------------------------------------------------------------------------
+
+%% re-evaluate metafeed
 execute_query(Query, From, push, State) ->
     try do(Query) of
         Result ->
@@ -74,6 +80,7 @@ execute_query(Query, From, push, State) ->
             From ! {error, "Error in query!"}
     end.
 
+% re-evaluate and generate feed output
 execute_query(Query, From, output, Format, State) ->
     try do(Query) of
         Result ->
@@ -84,7 +91,10 @@ execute_query(Query, From, output, Format, State) ->
             From ! {error, E}
     end.
 
+%%%--------------------------------------------------------------------------
 %% run all metafeeds that depend on metafeed Id
+%%%--------------------------------------------------------------------------
+
 push_list(Id) ->
     %% get dependent metafeeds from db
     RunList = case persistence:get_metafeed(Id) of

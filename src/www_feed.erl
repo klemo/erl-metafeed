@@ -29,7 +29,7 @@ out(A) ->
     Act = lists:sublist(A#arg.appmoddata, 7),
     case Act of
         "change/" ->
-            change_query(string:substr(Act, 8));
+            todo;
         _ ->
             feed(A)
     end.
@@ -40,15 +40,18 @@ feed(A) ->
         {ok, "rss"} ->
             Format = rss,
             MimeType = "application/rss+xml";
+        {ok, "atom"} ->
+            Format = atom,
+            MimeType = "application/atom+xml";
         {ok, "json"} ->
             Format = {json, yaws_api:getvar(A, "callback")},
             MimeType = "application/json";
         {ok, _} ->
-            Format = rss,
-            MimeType = "application/rss+xml";
+            Format = atom,
+            MimeType = "application/atom+xml";
         undefined ->
-            Format = rss,
-            MimeType = "application/rss+xml"
+            Format = atom,
+            MimeType = "application/atom+xml"
     end,
     Res = mf:readq(A#arg.appmoddata, Format),
     case Res of
@@ -56,13 +59,4 @@ feed(A) ->
             {content, MimeType, Content};
         {error, _} ->
             {ehtml, www_gen:render_error("Unable to read this feed!")}
-    end.
-
-change_query(Name) ->
-    Res = mf:reads(Name),
-    case Res of
-        {ok, Content} ->
-            {html, Content};
-        {error, E} ->
-            {html, io_lib:format("error: ~s", [E])}
     end.
