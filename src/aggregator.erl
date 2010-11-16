@@ -321,12 +321,12 @@ read_items(Feed, Format) ->
 read_push_info(Feed, Format) ->
     XPathExpr = 
         case Format of
-            rss -> "atom:link[@rel='hub']";
-            atom -> "atom[@rel='hub']"
+            rss -> "atom:link[@rel='hub']/@href";
+            atom -> "link[@rel='hub']/@href"
         end,
     case xmerl_xpath:string(XPathExpr, Feed) of
         [Node|_] ->
-            {ok, Node#xmlElement.name};
+            {ok, Node#xmlAttribute.value};
         [] ->
             {error, "no_push"}
     end.
