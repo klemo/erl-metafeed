@@ -23,7 +23,6 @@
 -module(www_feed).
 
 -include_lib("yaws/include/yaws_api.hrl").
--compile(export_all).
 
 out(A) ->
     Act = lists:sublist(A#arg.appmoddata, 7),
