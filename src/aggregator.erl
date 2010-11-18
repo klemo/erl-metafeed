@@ -333,6 +333,8 @@ read_push_info(Feed, Format) ->
 
 %%%--------------------------------------------------------------------------
 % get time of most recent feed item
+% rss: convert date to native erlang
+% atom: pass date as string (TODO: rfc3339 date parsing)
 %%%--------------------------------------------------------------------------
 read_timestamp([], _) ->
     {ok, -1};
@@ -345,7 +347,10 @@ read_timestamp([Item|_], Format) ->
         end,
     case xmerl_xpath:string(XPathExpr, Item) of
         [Node|_] ->
-            {ok, httpd_util:convert_request_date(Node#xmlText.value)};
+            case Format of
+                rss -> {ok, httpd_util:convert_request_date(Node#xmlText.value)};
+                atom -> {ok, Node#xmlText.value}
+            end;
         [] ->
             {error, "error parsing pubDate"}
     end.
