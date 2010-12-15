@@ -22,16 +22,12 @@
 %%%-------------------------------------------------------------------
 -module(www_feed).
 
+-export([out/1]).
+
 -include_lib("yaws/include/yaws_api.hrl").
 
 out(A) ->
-    Act = lists:sublist(A#arg.appmoddata, 7),
-    case Act of
-        "change/" ->
-            todo;
-        _ ->
-            feed(A)
-    end.
+    feed(A).
 
 %% renders query result as feed
 feed(A) ->

@@ -349,7 +349,8 @@ read_timestamp([Item|_], Format) ->
         [Node|_] ->
             case Format of
                 rss -> {ok, httpd_util:convert_request_date(Node#xmlText.value)};
-                atom -> {ok, Node#xmlText.value}
+                atom -> {ok, httpd_util:convert_request_date(Node#xmlText.value)}
+                %%atom -> {ok, Node#xmlText.value}
             end;
         [] ->
             {error, "error parsing pubDate"}
