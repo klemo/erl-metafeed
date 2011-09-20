@@ -26,7 +26,7 @@
 -include_lib("stdlib/include/qlc.hrl" ).
 -include("mf.hrl").
 
--export([start/0, add_metafeed/1, get_metafeed/1,
+-export([start/0, add_metafeed/1, get_metafeed/1, get_metafeed/2,
          del_metafeed/1, get_metafeed_list/0, get_metafeed_pid/1,
          insert_depencencies/2]).
 
@@ -98,6 +98,19 @@ get_metafeed(Id) ->
     T = fun() -> mnesia:read({metafeed, Id}) end,
     mnesia:transaction(T).
 
+get_metafeed(Name, User) ->
+    Q = qlc:q([X || X <- mnesia:table(metafeed),
+                    X#metafeed.name==Name,
+                    X#metafeed.user==User
+                       ]),
+    F = fun() -> qlc:e(Q) end,
+    case mnesia:transaction(F) of
+        {atomic, Val} ->
+            {ok, Val};
+        E ->
+            {error, E}
+    end.
+
 get_metafeed_pid(Id) ->
     T = fun() -> mnesia:read({metafeed, Id}) end,
     case mnesia:transaction(T) of
@@ -126,12 +139,13 @@ add_metafeed(MF) when is_record(MF, metafeed) ->
             {error, E}
     end;
 
-add_metafeed({Id, Name, Description, Source, Pid, Pipes}) ->
+add_metafeed({Id, Name, Description, Source, User, Pid, Pipes}) ->
     MF = #metafeed{
       id=Id,
       name=Name,
       description=Description,
       source=Source,
+      user=User,
       pid=Pid,
       pipes=Pipes
      },

@@ -24,7 +24,7 @@
 
 -behaviour(gen_server).
 
--export([start/0, stop/0, addq/3, runq/1, readq/2, updateq/2,
+-export([start/0, stop/0, addq/3, addq/4, runq/1, readq/2,
          removeq/1, listq/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -43,7 +43,11 @@ stop() ->
 
 addq(Name, Description, Query) ->
     gen_server:call(?MODULE,
-                    {add_query, Name, Description, Query}).
+                    {add_query, Name, Description, Query, "anonymous"}).
+
+addq(Name, Description, Query, User) ->
+    gen_server:call(?MODULE,
+                    {add_query, Name, Description, Query, User}).
 
 runq(Id) ->
     gen_server:call(?MODULE,
@@ -52,10 +56,6 @@ runq(Id) ->
 readq(Id, Format) ->
     gen_server:call(?MODULE,
                     {read_query, Id, Format}).
-
-updateq(Id, {Name, Description, Query}) ->
-    gen_server:call(?MODULE,
-                    {update_query, Id, {Name, Description, Query}}).
 
 removeq(Id) ->
     gen_server:call(?MODULE,
@@ -103,19 +103,26 @@ clean_up() ->
 %% Registers new query in system; query is added to query table and
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
-handle_call({add_query, Name, Description, Query}, _From, State) ->
-    %% todo: make real random unique id
-    utils:random_seed(),
-    Id = integer_to_list(random:uniform(1000)),
-    %% spawn new process for query
-    Pid = spawn(
-            fun() ->
-                    interpreter:main({Id, Query}) end),
-    %% initial query run
-    Pid ! {self(), run},
-    persistence:add_metafeed({Id, Name, Description, Query, Pid, []}),
-    persistence:insert_depencencies(Query, Id),
-    Reply = {ok, add, Id},
+handle_call({add_query, Name, Description, Query, User}, _From, State) ->
+    Reply = case persistence:get_metafeed(Name, User) of
+        {ok, []} ->
+            %% todo: make real random unique id
+            utils:random_seed(),
+            Id = integer_to_list(random:uniform(1000)),
+            %% spawn new process for query
+            Pid = spawn(
+                    fun() ->
+                            interpreter:main({Id, Query}) end),
+            %% initial query run
+            Pid ! {self(), run},
+            persistence:add_metafeed({Id, Name, Description, Query, User, Pid, []}),
+            persistence:insert_depencencies(Query, Id),
+            {ok, add, Id};
+         {ok, [#metafeed{id=Id, pid=Pid}]} ->
+                    utils:rpc(Pid, {update, Query}),
+                    persistence:add_metafeed({Id, Name, Description, Query, User, Pid, []}),
+                    {ok, add, Id}
+    end,
     {reply, Reply, State};
 
 %%%-------------------------------------------------------------------
@@ -145,22 +152,6 @@ handle_call({read_query, Id, Format}, _From, State) ->
                     {error, "no such query"};
                 [#metafeed{pid=Pid}] ->
                     utils:rpc(Pid, {read, Format})
-            end
-    end,
-    {reply, Reply, State};
-
-%%%-------------------------------------------------------------------
-%% Updates query text.
-%%%-------------------------------------------------------------------
-handle_call({update_query, Id, {Name, Description, Query}}, _From, State) ->
-    Reply = case persistence:get_metafeed(Id) of
-        {atomic, Resp} ->
-            case Resp of
-                [] ->
-                    {error, "no such query"};
-                [#metafeed{pid=Pid}] ->
-                    utils:rpc(Pid, {update, Query}),
-                    persistence:add_metafeed({Id, Name, Description, Query, Pid, []})
             end
     end,
     {reply, Reply, State};

@@ -51,39 +51,33 @@ query_list() ->
 
 %% adds query to erl-metafeed
 add_query(A) ->
-    case lists:any(fun({_, U}) -> U == undefined end,
-                   yaws_api:parse_post(A)) of
-        true ->
-            %% not all arguments are specified
-            {p, [], [{p, [], "Please spacify all parameters!"},
-                     {a, [{href, "/"}], "Return to main page"}]};
-        false ->
-            %% extract post variables
-            {ok, ValName} = yaws_api:postvar(A, "query-name"),
-            {ok, ValDesc} = yaws_api:postvar(A, "query-desc"),
-            {ok, ValSpec} = yaws_api:postvar(A, "query-spec"),
-            %% convert query-spec string to erlang terms
-            {ok, VTokens, _} = erl_scan:string(ValSpec ++ "."),
-            case erl_parse:parse_term(VTokens) of
-                {ok, VTerm} ->
-                    %% call metafeed api for adding query
-                    Res = mf:addq(ValName,
-                                  ValDesc,
-                                  VTerm),
-                    case Res of
-                        {ok, add, Id} ->
-                            [{p, [], "Query registered!"},
-                             {a, [{href,
-                                   "/feed/" ++ Id}], "Grab feed here"},
-                             {br},
-                             {a, [{href,
-                                   "/"}], "Return to main page"}];
-                        {error, E} ->
-                            render_error(E)
+    %% extract post variables
+    {ok, ValName} = yaws_api:getvar(A, "query-name"),
+    {ok, ValDesc} = yaws_api:getvar(A, "query-desc"),
+    {ok, ValSpec} = yaws_api:getvar(A, "query-spec"),
+    %% convert query-spec string to erlang terms
+    {ok, VTokens, _} = erl_scan:string(ValSpec ++ "."),
+    case erl_parse:parse_term(VTokens) of
+        {ok, VTerm} ->
+            User = "anonymous",
+            %% call metafeed api for adding query
+            Res = mf:addq(
+                    ValName, ValDesc, VTerm, User),
+            case Res of
+                {ok, add, Id} ->
+                    FeedUrl = "/feed/" ++ Id,
+                    Ret = {struct, [{url, FeedUrl}]},
+                    case yaws_api:getvar(A, "callback") of
+                        {ok, Callback} ->
+                            Callback ++ "(" ++ json2:encode(Ret) ++ ")";
+                        _ ->
+                            json2:encode(Ret)
                     end;
                 {error, E} ->
-                    render_error("Syntax error in query!")
-            end
+                    render_error(E)
+            end;
+        {error, E} ->
+            render_error("Syntax error in query!")
     end.
 
 render_error(E) ->

@@ -33,6 +33,7 @@
           name,
           description,
           source,
+          user,
           pid, %% pid of query process,
           pipes=[] %% list of metafeeds that depend on this metafeed
          }).

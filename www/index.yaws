@@ -22,7 +22,7 @@
     <div class="content">
       <div class="add-query">
         <a href="#" class="add-query-link">Add new metafeed</a>
-        <form method="post" action="/add-query.yaws" id="id_form_add_query">
+        <form method="get" action="/add-query.yaws" id="id_form_add_query">
           <table>
             <tbody>
               <tr>

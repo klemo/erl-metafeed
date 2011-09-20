@@ -1,5 +1,5 @@
 <erl>
 out(A) ->
-       {ehtml,
-        www_gen:add_query(A)}.
+       Ret = www_gen:add_query(A),
+       {content, "application/json", Ret}.
 </erl>
