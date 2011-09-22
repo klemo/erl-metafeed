@@ -30,17 +30,20 @@ test() ->
 
 l() ->
     {ok, add, Id_1} = mf:addq("1", "description",
-                              {fetch, "test_fix/test3.rss"}),
+                              {fetch, "test_fix/test2.rss"}),
 
     mf:addq("2", "description test",
-            {tail,
-             {3},
-             {fetch, Id_1}}),
+            {fetch, Id_1}).
 
-    mf:addq("3", "desc 3",
-            {union,
-             {},
-             {{fetch, "test_fix/test.rss"}, {fetch, "test_fix/test3.rss"}}}).
+    %% mf:addq("2", "description test",
+    %%         {tail,
+    %%          {3},
+    %%          {fetch, Id_1}}),
+
+    %% mf:addq("3", "desc 3",
+    %%         {union,
+    %%          {},
+    %%          {{fetch, "test_fix/test.rss"}, {fetch, "test_fix/test3.rss"}}}).
 
 fixtures() ->
     mf:addq("test-1",

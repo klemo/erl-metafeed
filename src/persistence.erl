@@ -158,7 +158,7 @@ add_metafeed({Id, Name, Description, Source, User, Pid, Pipes}) ->
     end.
 
 %%%-------------------------------------------------------------------
-%% Alalyzes query for pipe operations and inserts dependencies
+%% Analyzes query for pipe operations and inserts dependencies
 %% eg. if metafeed M2 fetches metafeed M1 then M1 -> M2
 %%%-------------------------------------------------------------------
 insert_depencencies({fetch, Source}, Id) ->

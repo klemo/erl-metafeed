@@ -38,11 +38,14 @@ main(Query, State) ->
     receive
         %% start query execution
         {From, run} ->
+            io:format("*** running query: ~p~n" ,[State]),
             execute_query(Query, From, push, State),
             main(Query, State);
         %% update query text
         {From, {update, NewQuery}} ->
             From ! {ok, self()},
+            % run this query to update data
+            execute_query(Query, From, pushNew, State),
             main(NewQuery, State);
         %% generate rss feed
         {From, {read, Format}} ->
@@ -67,19 +70,6 @@ main(Query, State) ->
 %% parse and execute query, catch all errors
 %%%--------------------------------------------------------------------------
 
-%% re-evaluate metafeed
-execute_query(Query, From, push, State) ->
-    try do(Query) of
-        Result ->
-            From ! {ok, Result},
-            {id, Id} = State,
-            aggregator:sync_query(Id, Result),
-            push_list(Id)
-    catch
-        _:E ->
-            From ! {error, "Error in query!"}
-    end.
-
 % re-evaluate and generate feed output
 execute_query(Query, From, output, Format, State) ->
     try do(Query) of
@@ -91,11 +81,24 @@ execute_query(Query, From, output, Format, State) ->
             From ! {error, E}
     end.
 
+%% re-evaluate metafeed
+execute_query(Query, From, PushMode, State) ->
+    try do(Query) of
+        Result ->
+            From ! {ok, Result},
+            {id, Id} = State,
+            aggregator:sync_query(Id, Result),
+            push_list(Id, PushMode)
+    catch
+        _:E ->
+            From ! {error, "Error in query!"}
+    end.
+
 %%%--------------------------------------------------------------------------
 %% run all metafeeds that depend on metafeed Id
 %%%--------------------------------------------------------------------------
 
-push_list(Id) ->
+push_list(Id, PushMode) ->
     %% get dependent metafeeds from db
     RunList = case persistence:get_metafeed(Id) of
                   {atomic, Resp} ->
@@ -112,6 +115,12 @@ push_list(Id) ->
     lists:map(fun(X) ->
                       case persistence:get_metafeed_pid(X) of
                           {ok, Pid} ->
+                              % pushNew means query needs to be totally updated
+                              case PushMode of
+                                  pushNew ->
+                                      mnesia:transaction(fun() -> mnesia:delete({feed, X}) end);
+                                  push -> ok
+                              end,
                               Pid ! {self(), run};
                           {error} ->
                               error

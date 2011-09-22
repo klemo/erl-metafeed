@@ -1,5 +1,5 @@
 ifdef debug
-	EFLAGS+=-Ddebug +export_all
+	EFLAGS += +debug_info +export_all
 endif
 
 .SUFFIXES: .erl .beam

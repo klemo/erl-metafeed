@@ -131,6 +131,7 @@ add_feed(Source) ->
 %% @end 
 %%------------------------------------------------------------------------------
 sync_query(Id, Content) ->
+    io:format("*** inside sync_query of ~p~n" ,[Id]),
     {_, Items} = Content,
     case read_timestamp(Items) of
         {ok, Timestamp} ->
@@ -140,6 +141,7 @@ sync_query(Id, Content) ->
                 {atomic, Resp} ->
                     case Resp of
                         [] ->
+                            io:format("*** writing ~p~n" ,[Content]),
                             NewFeed = #feed{source=Id,
                                             content=Content,
                                             timestamp=Timestamp,

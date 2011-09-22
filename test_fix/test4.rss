@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:georss="http://www.georss.org/georss" xmlns:twitter="http://api.twitter.com">
+  <channel>
+    <title>Twitter Test4</title>
+    <link>http://twitter.com/test2</link>
+    <atom:link type="application/rss+xml" href="http://twitter.com/statuses/user_timeline/test.rss" rel="self"/>
+    <description>Twitter updates from test2.</description>
+    <language>en-us</language>
+    <ttl>40</ttl>
+    <item>
+      <title>cetiri</title>
+      <description>one</description>
+      <pubDate>Tue, 29 Aug 2010 13:53:20 +0000</pubDate>
+      <guid>http://twitter.com/test/1</guid>
+      <link>http://twitter.com/test2/1</link>
+    </item>
+  </channel>
+</rss>
