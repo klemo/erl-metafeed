@@ -28,7 +28,7 @@
 
 -export([start/0, add_metafeed/1, get_metafeed/1, get_metafeed/2,
          del_metafeed/1, get_metafeed_list/0, get_metafeed_pid/1,
-         insert_depencencies/2]).
+         insert_depencencies/2, del_feed/1]).
 
 %%--------------------------------------------------------------------
 %% @spec start() -> {ok} | {error, Reason}
@@ -198,6 +198,20 @@ insert_depencencies({Op, Items}, Id) ->
 %%--------------------------------------------------------------------
 del_metafeed(Id) ->
     T = fun() -> mnesia:delete({metafeed, Id}) end,
+    case mnesia:transaction(T) of
+        {atomic, ok} ->
+            {ok, Id};
+        E ->
+            {error, E}
+    end.
+
+%%--------------------------------------------------------------------
+%% @spec del_feed(Id) -> {ok, Id} | {error, Reason}
+%% @doc Delete feed from db
+%% @end 
+%%--------------------------------------------------------------------
+del_feed(Id) ->
+    T = fun() -> mnesia:delete({feed, Id}) end,
     case mnesia:transaction(T) of
         {atomic, ok} ->
             {ok, Id};

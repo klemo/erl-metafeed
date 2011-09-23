@@ -131,7 +131,6 @@ add_feed(Source) ->
 %% @end 
 %%------------------------------------------------------------------------------
 sync_query(Id, Content) ->
-    io:format("*** inside sync_query of ~p~n" ,[Id]),
     {_, Items} = Content,
     case read_timestamp(Items) of
         {ok, Timestamp} ->
@@ -141,7 +140,7 @@ sync_query(Id, Content) ->
                 {atomic, Resp} ->
                     case Resp of
                         [] ->
-                            io:format("*** writing ~p~n" ,[Content]),
+                            io:format("*** query ~p empty~n" ,[Id]),
                             NewFeed = #feed{source=Id,
                                             content=Content,
                                             timestamp=Timestamp,
@@ -219,6 +218,7 @@ read(Source) ->
                     add_feed(Source);
                 %% found feed in database
                 [#feed{source=Source, content=Content}] ->
+                    io:format("*** reading ~p\n", [Source]),
                     {Meta, Items} = Content,
                     %% reduce feed output to 20 items
                     ReducedItems = lists:sublist(Items, ?DEF_NUM_OF_ITEMS),

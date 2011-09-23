@@ -25,15 +25,14 @@
 
 test() ->
     l(),
-    mf:readq("1", {json, undefined}),
     mf:stop().
 
 l() ->
-    {ok, add, Id_1} = mf:addq("1", "description",
-                              {fetch, "test_fix/test2.rss"}),
+    {ok, add, Id1} = mf:addq("1", "description",
+                             {fetch, "test_fix/test2.rss"}),
 
-    mf:addq("2", "description test",
-            {fetch, Id_1}).
+    {ok, add, Id2} = mf:addq("2", "description",
+                             {fetch, Id1}).
 
     %% mf:addq("2", "description test",
     %%         {tail,

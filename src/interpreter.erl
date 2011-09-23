@@ -45,7 +45,8 @@ main(Query, State) ->
         {From, {update, NewQuery}} ->
             From ! {ok, self()},
             % run this query to update data
-            execute_query(Query, From, pushNew, State),
+            io:format("*** updating query: ~p~n" ,[State]),
+            execute_query(NewQuery, From, pushNew, State),
             main(NewQuery, State);
         %% generate rss feed
         {From, {read, Format}} ->
@@ -87,6 +88,12 @@ execute_query(Query, From, PushMode, State) ->
         Result ->
             From ! {ok, Result},
             {id, Id} = State,
+            case PushMode of
+                pushNew ->
+                    io:format("*** deleting query: ~p~n" ,[Id]),
+                    persistence:del_feed(Id);
+                push -> ok
+            end,
             aggregator:sync_query(Id, Result),
             push_list(Id, PushMode)
     catch
@@ -118,7 +125,8 @@ push_list(Id, PushMode) ->
                               % pushNew means query needs to be totally updated
                               case PushMode of
                                   pushNew ->
-                                      mnesia:transaction(fun() -> mnesia:delete({feed, X}) end);
+                                      io:format("*** inside push_list: deleting query: ~p~n" ,[X]),
+                                      persistence:del_feed(X);
                                   push -> ok
                               end,
                               Pid ! {self(), run};

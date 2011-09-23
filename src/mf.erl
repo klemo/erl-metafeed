@@ -104,7 +104,6 @@ clean_up() ->
 %% new process is spawned for query
 %%%-------------------------------------------------------------------
 handle_call({add_query, Name, Description, Query, User}, _From, State) ->
-    io:format("*** starting add_query: ~p~n" ,[Name]),
     Reply = case persistence:get_metafeed(Name, User) of
                 {ok, []} ->
                     %% todo: make real random unique id
@@ -114,14 +113,12 @@ handle_call({add_query, Name, Description, Query, User}, _From, State) ->
                     Pid = spawn(
                             fun() ->
                                     interpreter:main({Id, Query}) end),
-                    io:format("*** sending run message to : ~p~n" ,[Pid]),
                     %% initial query run
                     Pid ! {self(), run},
                     persistence:add_metafeed({Id, Name, Description, Query, User, Pid, []}),
                     persistence:insert_depencencies(Query, Id),
                     {ok, add, Id};
                 {ok, [#metafeed{id=Id, pid=Pid, pipes=Pipes}]} ->
-                    io:format("*** query exists, update: ~p~n" ,[Name]),
                     utils:rpc(Pid, {update, Query}),
                     persistence:add_metafeed({Id, Name, Description, Query, User, Pid, Pipes}),
                     {ok, add, Id}
