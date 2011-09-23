@@ -34,6 +34,8 @@ l() ->
     {ok, add, Id2} = mf:addq("2", "description",
                              {fetch, Id1}).
 
+    %% http://search.twitter.com/search.rss?q=%23f8&result_type=recent
+
     %% mf:addq("2", "description test",
     %%         {tail,
     %%          {3},

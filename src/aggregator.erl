@@ -232,7 +232,7 @@ read(Source) ->
 %% @end 
 %%------------------------------------------------------------------------------
 read_raw(Url) ->
-    case http:request(get, {Url, []}, [{autoredirect, false}], []) of
+    case http:request(get, {Url, []}, [{autoredirect, false}, {timeout, 3000}], []) of
         {ok, {{_, Code, _}, _, Body}}->
             case Code of
                 200 ->
