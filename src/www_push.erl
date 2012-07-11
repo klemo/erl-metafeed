@@ -22,7 +22,8 @@
 %%%-------------------------------------------------------------------
 -module(www_push).
 
--include_lib("yaws/include/yaws_api.hrl").
+-include_lib("/home/klemo/code/yaws/include/yaws_api.hrl").
+
 
 out(A) ->
     case A#arg.appmoddata of

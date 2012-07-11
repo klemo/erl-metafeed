@@ -23,7 +23,7 @@
 -module(www_gen).
 -export([query_list/0, add_query/1, render_error/1]).
 
--include_lib("yaws/include/yaws_api.hrl").
+-include_lib("/home/klemo/code/yaws/include/yaws_api.hrl").
 
 -include("mf.hrl").
 

@@ -73,13 +73,17 @@ main(Query, State) ->
 
 % re-evaluate and generate feed output
 execute_query(Query, From, output, Format, State) ->
+    io:format("!!! execute_query: ~p~n" ,[Query]),
     try do(Query) of
         Result ->
             {id, Id} = State,
-            From ! {ok, utils:generate_feed(Result, Format, Id)}
+            try utils:generate_feed(Result, Format, Id) of
+                Content -> From ! {ok, Content}
+            catch
+                error:E -> From ! {error, 'died in execute query'}
+            end
     catch
-        error:E ->
-            From ! {error, E}
+        error:E -> From ! {error, 'died in execute query'}
     end.
 
 %% re-evaluate metafeed

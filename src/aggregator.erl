@@ -132,7 +132,7 @@ add_feed(Source) ->
 %%------------------------------------------------------------------------------
 sync_query(Id, Content) ->
     {_, Items} = Content,
-    case read_timestamp(Items) of
+    try read_timestamp(Items) of
         {ok, Timestamp} ->
             %% check if query result is already in db
             T = fun() -> mnesia:read({feed, Id}) end,
@@ -156,8 +156,9 @@ sync_query(Id, Content) ->
                         [F] ->
                             add_new_items(F, Content, Timestamp)
                     end
-            end;
-        {error, E} ->
+            end
+    catch
+        error:E ->
             {error, E}
     end.
 

@@ -35,6 +35,12 @@ fetch_test_() ->
                    get_titles(
                      fetch("test_fix/test2.rss")
                     )
+                  ),
+     ?_assertMatch(20,
+                   length(
+                     get_titles(
+                       fetch("http://www.jutarnji.hr/rss")
+                      ))
                   )
      ].
 

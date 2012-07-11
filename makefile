@@ -13,7 +13,7 @@ all: compile
 	${ERL} -pa $(CURDIR)/ebin -s mf start
 
 www: compile
-	yaws -i --pa $(CURDIR)/ebin --runmod mf
+	~/bin/yaws -i --conf yaws.conf --pa $(CURDIR)/ebin --runmod mf
 
 ebin/:
 	mkdir ebin

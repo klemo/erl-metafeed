@@ -36,3 +36,12 @@ get_titles_test_() ->
                     )
                   )
     ].
+
+gen_json_test_() ->
+    [
+     ?_assertMatch([],
+                   utils:generate_feed(feed_parser:fetch("test_fix/test.rss"),
+                                       {json, test},
+                                      1)
+                  )
+    ].
