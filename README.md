@@ -15,7 +15,7 @@ running erl-metafeed web server on http://localhost:8001:
 
 or as deamon:
 
-   yaws -D --pa ebin --runmod mf
+        yaws -D --pa ebin --runmod mf
 
 playing with internals:
 
